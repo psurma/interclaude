@@ -6,6 +6,7 @@ const CLAUDE_PATH = process.env.CLAUDE_CODE_PATH || 'claude';
 const ALLOWED_TOOLS = process.env.CLAUDE_CODE_ALLOWED_TOOLS || '';
 const SYSTEM_PROMPT = process.env.CLAUDE_SYSTEM_PROMPT || '';
 const INSTANCE_NAME = process.env.INSTANCE_NAME || 'unnamed-instance';
+const CLAUDE_MODEL = process.env.CLAUDE_MODEL || '';
 
 /**
  * Invoke Claude Code in headless mode with the given question
@@ -39,6 +40,10 @@ export async function invokeClaudeCode(question, context, sessionId) {
   }
 
   args.push('--print', prompt, '--output-format', 'json', '--dangerously-skip-permissions');
+
+  if (CLAUDE_MODEL) {
+    args.push('--model', CLAUDE_MODEL);
+  }
 
   if (ALLOWED_TOOLS) {
     args.push('--allowedTools', ALLOWED_TOOLS);

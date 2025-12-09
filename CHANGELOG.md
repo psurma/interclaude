@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.6] - 2024-12-09
+
+### Added
+
+- `CLAUDE_MODEL` environment variable to specify model (opus, sonnet, haiku, or model ID)
+- Fixes issue where remote instances default to wrong model
+
 ## [0.0.5] - 2024-12-09
 
 ### Added
