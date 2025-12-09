@@ -7,6 +7,7 @@ const ALLOWED_TOOLS = process.env.CLAUDE_CODE_ALLOWED_TOOLS || '';
 const SYSTEM_PROMPT = process.env.CLAUDE_SYSTEM_PROMPT || '';
 const INSTANCE_NAME = process.env.INSTANCE_NAME || 'unnamed-instance';
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || '';
+const WORKING_DIR = process.env.CLAUDE_WORKING_DIR || '/tmp';
 
 /**
  * Invoke Claude Code in headless mode with the given question
@@ -56,7 +57,7 @@ export async function invokeClaudeCode(question, context, sessionId) {
     const child = spawn(CLAUDE_PATH, args, {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env },
-      cwd: '/tmp'
+      cwd: WORKING_DIR
     });
 
     // Close stdin immediately to signal we're not sending input
