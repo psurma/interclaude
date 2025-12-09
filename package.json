@@ -1,0 +1,33 @@
+{
+  "name": "interclaude",
+  "version": "0.0.1",
+  "description": "Claude Code Inter-Instance Communication - Enable multiple Claude Code instances to communicate over HTTP",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "test": "bash test/test-roundtrip.sh"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ai",
+    "communication",
+    "webhook"
+  ],
+  "author": "Pete",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^5.0.1",
+    "uuid": "^11.0.3",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
