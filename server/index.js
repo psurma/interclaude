@@ -6,6 +6,7 @@ import { invokeClaudeCode, checkClaudeAvailability, getInstanceInfo } from './cl
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { networkInterfaces } from 'os';
 
 // Load environment variables
 config();
@@ -175,9 +176,27 @@ app.use((req, res) => {
   });
 });
 
+// Get local IP addresses
+function getLocalIPs() {
+  const nets = networkInterfaces();
+  const ips = [];
+
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      // Skip internal (loopback) and non-IPv4 addresses
+      if (net.family === 'IPv4' && !net.internal) {
+        ips.push({ interface: name, address: net.address });
+      }
+    }
+  }
+  return ips;
+}
+
 // Start server
 app.listen(PORT, HOST, () => {
   const instanceInfo = getInstanceInfo();
+  const localIPs = getLocalIPs();
+
   logger.info(`InterClaude server started`, {
     host: HOST,
     port: PORT,
@@ -185,6 +204,15 @@ app.listen(PORT, HOST, () => {
     hasPersona: !!instanceInfo.persona,
     maxConcurrent: MAX_CONCURRENT
   });
-  logger.info(`Health check: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/health`);
-  logger.info(`Ask endpoint: POST http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/ask`);
+
+  logger.info(`Local: http://localhost:${PORT}`);
+
+  if (localIPs.length > 0) {
+    logger.info(`Network interfaces:`);
+    for (const ip of localIPs) {
+      logger.info(`  ${ip.interface}: http://${ip.address}:${PORT}`);
+    }
+  }
+
+  logger.info(`Health: GET /health | Ask: POST /ask`);
 });
