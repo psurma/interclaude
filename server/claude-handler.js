@@ -38,7 +38,7 @@ export async function invokeClaudeCode(question, context, sessionId) {
     args.push('--resume', sessionId);
   }
 
-  args.push('-p', prompt, '--output-format', 'json');
+  args.push('--print', prompt, '--output-format', 'json', '--dangerously-skip-permissions');
 
   if (ALLOWED_TOOLS) {
     args.push('--allowedTools', ALLOWED_TOOLS);
@@ -50,8 +50,12 @@ export async function invokeClaudeCode(question, context, sessionId) {
 
     const child = spawn(CLAUDE_PATH, args, {
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env }
+      env: { ...process.env },
+      cwd: '/tmp'
     });
+
+    // Close stdin immediately to signal we're not sending input
+    child.stdin.end();
 
     const timeoutId = setTimeout(() => {
       child.kill('SIGTERM');
