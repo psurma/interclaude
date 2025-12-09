@@ -1,95 +1,66 @@
 # Ask Claude Skill
 
-Ask questions to remote Claude Code instances running InterClaude servers.
+Ask questions to remote Claude Code instances by name using the InterClaude registry.
 
-## Configuration
+## Registry
 
-Set these environment variables to configure default targets:
+Instances are defined in `~/.claude/interclaude-registry.json`:
 
-```bash
-# Default instance
-export CLAUDE_BRIDGE_HOST=localhost
-export CLAUDE_BRIDGE_PORT=3301
-
-# Named instances (optional)
-export CLAUDE_SDK_HOST=192.168.1.10
-export CLAUDE_SDK_PORT=3301
-export CLAUDE_FRONTEND_HOST=192.168.1.11
-export CLAUDE_FRONTEND_PORT=3301
-export CLAUDE_BACKEND_HOST=192.168.1.12
-export CLAUDE_BACKEND_PORT=3301
+```json
+{
+  "instances": {
+    "local": {"host": "localhost", "port": 3301, "description": "Local instance"},
+    "sdk-developer": {"host": "192.168.1.10", "port": 3301, "description": "SDK expert"},
+    "frontend-dev": {"host": "192.168.1.11", "port": 3301, "description": "React/Vue specialist"},
+    "backend-dev": {"host": "192.168.1.12", "port": 3301, "description": "Node.js/API expert"}
+  },
+  "default": "local"
+}
 ```
 
 ## Usage
 
-To ask a question to a remote Claude instance, use the Bash tool with curl:
-
-### Default instance:
+### List available instances:
 ```bash
-curl -s -X POST "http://${CLAUDE_BRIDGE_HOST:-localhost}:${CLAUDE_BRIDGE_PORT:-3301}/ask" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "YOUR QUESTION HERE"}' | jq -r '.answer'
+/Users/pete/vibe/interclaude/client/ask-instance.sh --list
 ```
 
-### Named instances:
+### Discover which instances are online:
 ```bash
+/Users/pete/vibe/interclaude/client/ask-instance.sh --discover
+```
+
+### Ask a named instance:
+```bash
+# Ask the local instance
+/Users/pete/vibe/interclaude/client/ask-instance.sh local "What is React?"
+
 # Ask the SDK developer
-curl -s -X POST "http://${CLAUDE_SDK_HOST}:${CLAUDE_SDK_PORT}/ask" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "How do I authenticate with the SDK?"}' | jq -r '.answer'
+/Users/pete/vibe/interclaude/client/ask-instance.sh sdk-developer "How do I authenticate with the SDK?"
 
-# Ask the Frontend developer
-curl -s -X POST "http://${CLAUDE_FRONTEND_HOST}:${CLAUDE_FRONTEND_PORT}/ask" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "How should I structure this React component?"}' | jq -r '.answer'
+# Ask the frontend developer
+/Users/pete/vibe/interclaude/client/ask-instance.sh frontend-dev "Best practices for React state management?"
 
-# Ask the Backend developer
-curl -s -X POST "http://${CLAUDE_BACKEND_HOST}:${CLAUDE_BACKEND_PORT}/ask" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What parameters does the /users endpoint accept?"}' | jq -r '.answer'
+# Ask the backend developer
+/Users/pete/vibe/interclaude/client/ask-instance.sh backend-dev "What parameters does POST /users accept?"
 ```
 
-### With context:
+### Ask with context:
 ```bash
-curl -s -X POST "http://${CLAUDE_BRIDGE_HOST:-localhost}:${CLAUDE_BRIDGE_PORT:-3301}/ask" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "question": "What does this code do?",
-    "context": "function foo() { return bar.map(x => x * 2); }"
-  }' | jq -r '.answer'
+/Users/pete/vibe/interclaude/client/ask-instance.sh local "What does this do?" "const x = arr.map(i => i * 2)"
 ```
 
-### With session continuity:
-```bash
-# First question - capture session ID
-RESPONSE=$(curl -s -X POST "http://${CLAUDE_BRIDGE_HOST:-localhost}:${CLAUDE_BRIDGE_PORT:-3301}/ask" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "Remember the number 42"}')
-SESSION_ID=$(echo "$RESPONSE" | jq -r '.session_id')
+## Direct curl (without registry)
 
-# Follow-up question using session
-curl -s -X POST "http://${CLAUDE_BRIDGE_HOST:-localhost}:${CLAUDE_BRIDGE_PORT:-3301}/ask" \
+If you know the host/port directly:
+
+```bash
+curl -s -X POST http://HOST:PORT/ask \
   -H "Content-Type: application/json" \
-  -d "{\"question\": \"What number did I mention?\", \"session_id\": \"$SESSION_ID\"}" | jq -r '.answer'
+  -d '{"question": "YOUR QUESTION"}' | jq -r '.answer'
 ```
 
-### Check available instances:
+## Check instance health/persona:
 ```bash
-# Check what instances are available and their personas
-curl -s "http://${CLAUDE_BRIDGE_HOST:-localhost}:${CLAUDE_BRIDGE_PORT:-3301}/health" | jq '{name: .instance_name, persona: .persona}'
-```
-
-## Using the ask.sh client
-
-Alternatively, use the provided client script:
-
-```bash
-# Local
-/Users/pete/vibe/interclaude/client/ask.sh -p 3301 -q "Your question"
-
-# Remote machine
-/Users/pete/vibe/interclaude/client/ask.sh -h 192.168.1.10 -p 3301 -q "Your question"
-
-# With context
-/Users/pete/vibe/interclaude/client/ask.sh -h 192.168.1.10 -p 3301 -q "What is this?" -c "const x = 42;"
+curl -s http://HOST:PORT/health | jq '{name: .instance_name, persona: .persona}'
 ```

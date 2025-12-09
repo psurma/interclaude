@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.4] - 2024-12-09
+
+### Added
+
+- Instance registry system (`~/.claude/interclaude-registry.json`)
+- `ask-instance.sh` client for querying instances by name
+- `--list` flag to show registered instances
+- `--discover` flag to check which instances are online
+- Updated skill documentation for registry usage
+
 ## [0.0.3] - 2024-12-09
 
 ### Added
