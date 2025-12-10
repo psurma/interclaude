@@ -227,6 +227,11 @@
       color: var(--text-secondary);
     }
 
+    .messages-header-actions {
+      display: flex;
+      gap: 0.25rem;
+    }
+
     .messages {
       flex: 1;
       overflow-y: auto;
@@ -236,6 +241,26 @@
     .message {
       margin-bottom: 1.5rem;
       animation: fadeIn 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message.user-message {
+      align-items: flex-end;
+    }
+
+    .message.user-message .message-header {
+      flex-direction: row-reverse;
+    }
+
+    .message.user-message .message-content {
+      max-width: 80%;
+      border-radius: 12px 12px 4px 12px;
+    }
+
+    .message.assistant-message .message-content {
+      max-width: 90%;
+      border-radius: 12px 12px 12px 4px;
     }
 
     @keyframes fadeIn {
@@ -335,6 +360,56 @@
 
     .message-content:hover .copy-btn {
       opacity: 1;
+    }
+
+    .message-content.collapsible {
+      position: relative;
+    }
+
+    .message-content.collapsed {
+      max-height: 4.5em;
+      overflow: hidden;
+    }
+
+    .message-content.collapsed::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2em;
+      background: linear-gradient(transparent, var(--bg-secondary));
+      pointer-events: none;
+    }
+
+    .collapse-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      margin-top: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      background: var(--bg-tertiary);
+      border: none;
+      border-radius: 4px;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .collapse-toggle:hover {
+      color: var(--text-primary);
+      background: var(--border);
+    }
+
+    .collapse-toggle svg {
+      width: 12px;
+      height: 12px;
+      transition: transform 0.2s;
+    }
+
+    .collapse-toggle.collapsed svg {
+      transform: rotate(-90deg);
     }
 
     .input-area {
@@ -665,12 +740,24 @@
     <main class="content">
       <div class="messages-header">
         <span id="conversation-title">Conversation</span>
-        <button class="btn btn-icon" onclick="clearConversation()" title="Clear conversation">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg>
-        </button>
+        <div class="messages-header-actions">
+          <button class="btn btn-icon" onclick="collapseAll()" title="Collapse all">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+          </button>
+          <button class="btn btn-icon" onclick="expandAll()" title="Expand all">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <button class="btn btn-icon" onclick="clearConversation()" title="Clear conversation">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="messages" id="messages">
         <div class="empty-state">
@@ -957,7 +1044,7 @@
       if (emptyState) emptyState.remove();
 
       const messageDiv = document.createElement('div');
-      messageDiv.className = 'message';
+      messageDiv.className = `message ${type === 'user' ? 'user-message' : type === 'assistant' ? 'assistant-message' : 'error-message'}`;
 
       const time = new Date().toLocaleTimeString();
       const timestamp = new Date().toISOString();
@@ -973,12 +1060,13 @@
         `;
       } else if (type === 'assistant') {
         const rendered = marked.parse(content);
+        const isLong = content.length > 300 || content.split('\n').length > 5;
         messageDiv.innerHTML = `
           <div class="message-header">
             <span class="message-sender assistant">${sender || 'Assistant'}</span>
             <span class="message-time">${time}${durationStr}</span>
           </div>
-          <div class="message-content">
+          <div class="message-content ${isLong ? 'collapsible collapsed' : ''}">
             <button class="btn btn-icon copy-btn" onclick="copyToClipboard(this)" title="Copy to clipboard">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -987,6 +1075,14 @@
             </button>
             ${rendered}
           </div>
+          ${isLong ? `
+          <button class="collapse-toggle collapsed" onclick="toggleCollapse(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+            <span>Show more</span>
+          </button>
+          ` : ''}
         `;
         // Store raw content for copying
         messageDiv.querySelector('.message-content').dataset.raw = content;
@@ -1122,6 +1218,39 @@
       if (input) {
         input.type = input.type === 'password' ? 'text' : 'password';
       }
+    }
+
+    // Toggle message collapse
+    function toggleCollapse(btn) {
+      const messageDiv = btn.parentElement;
+      const content = messageDiv.querySelector('.message-content');
+      const isCollapsed = content.classList.toggle('collapsed');
+      btn.classList.toggle('collapsed', isCollapsed);
+      btn.querySelector('span').textContent = isCollapsed ? 'Show more' : 'Show less';
+    }
+
+    // Collapse all messages
+    function collapseAll() {
+      document.querySelectorAll('.message-content.collapsible').forEach(content => {
+        content.classList.add('collapsed');
+        const btn = content.parentElement.querySelector('.collapse-toggle');
+        if (btn) {
+          btn.classList.add('collapsed');
+          btn.querySelector('span').textContent = 'Show more';
+        }
+      });
+    }
+
+    // Expand all messages
+    function expandAll() {
+      document.querySelectorAll('.message-content.collapsible').forEach(content => {
+        content.classList.remove('collapsed');
+        const btn = content.parentElement.querySelector('.collapse-toggle');
+        if (btn) {
+          btn.classList.remove('collapsed');
+          btn.querySelector('span').textContent = 'Show less';
+        }
+      });
     }
 
     // Show loading indicator
