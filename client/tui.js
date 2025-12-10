@@ -495,32 +495,13 @@ screen.key(["tab"], () => {
   }
 });
 
-// Arrow keys for instance navigation (global fallback)
-screen.key(["up", "k"], () => {
-  if (screen.focused !== inputBox) {
-    stopListSpinner(); // Stop spinner during navigation
-    instanceList.up();
-    const index = instanceList.selected;
-    const name = Object.keys(registry.instances)[index];
-    if (name) {
-      selectedInstance = name;
-      updateInstanceDetails(name);
-    }
-    screen.render();
-  }
-});
-
-screen.key(["down", "j"], () => {
-  if (screen.focused !== inputBox) {
-    stopListSpinner(); // Stop spinner during navigation
-    instanceList.down();
-    const index = instanceList.selected;
-    const name = Object.keys(registry.instances)[index];
-    if (name) {
-      selectedInstance = name;
-      updateInstanceDetails(name);
-    }
-    screen.render();
+// Handle list navigation events to update details
+instanceList.on("select item", (item, index) => {
+  stopListSpinner();
+  const name = Object.keys(registry.instances)[index];
+  if (name) {
+    selectedInstance = name;
+    updateInstanceDetails(name);
   }
 });
 
