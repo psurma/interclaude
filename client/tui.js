@@ -118,9 +118,9 @@ const messageLog = grid.set(6, 0, 4, 12, blessed.log, {
   mouse: true,
 });
 
-// Input box
-const inputBox = grid.set(10, 0, 2, 10, blessed.textbox, {
-  label: " Ask a Question (Enter to send, Esc to cancel) ",
+// Input box (textarea for multi-line)
+const inputBox = grid.set(10, 0, 2, 10, blessed.textarea, {
+  label: " Ask a Question (Ctrl+Enter to send, Esc to cancel) ",
   border: { type: "line" },
   style: {
     border: { fg: "green" },
@@ -128,6 +128,7 @@ const inputBox = grid.set(10, 0, 2, 10, blessed.textbox, {
   },
   inputOnFocus: true,
   mouse: true,
+  keys: true,
 });
 
 // Help panel
@@ -146,8 +147,8 @@ const loadingBox = blessed.box({
   parent: screen,
   top: "center",
   left: "center",
-  width: 30,
-  height: 5,
+  width: 35,
+  height: 6,
   border: { type: "line" },
   style: {
     border: { fg: "yellow" },
@@ -165,14 +166,32 @@ let spinnerIndex = 0;
 let listSpinnerIndex = 0;
 let spinnerInterval = null;
 let listSpinnerInterval = null;
+let loadingStartTime = null;
+let loadingTimeout = null;
 
-function showLoading(message = "Loading...") {
+function showLoading(message = "Loading...", timeout = null) {
   isLoading = true;
-  loadingBox.setContent(`{center}{yellow-fg}${spinnerFrames[0]} ${message}{/yellow-fg}{/center}`);
+  loadingStartTime = Date.now();
+  loadingTimeout = timeout;
+
+  const updateContent = () => {
+    const elapsed = Math.floor((Date.now() - loadingStartTime) / 1000);
+    let timeStr = `${elapsed}s`;
+    if (loadingTimeout) {
+      const timeoutSec = Math.floor(loadingTimeout / 1000);
+      timeStr = `${elapsed}s / ${timeoutSec}s`;
+    }
+    loadingBox.setContent(
+      `{center}{yellow-fg}${spinnerFrames[spinnerIndex]} ${message}{/yellow-fg}\n` +
+      `{center}{cyan-fg}${timeStr}{/cyan-fg}{/center}`
+    );
+  };
+
+  updateContent();
   loadingBox.show();
   spinnerInterval = setInterval(() => {
     spinnerIndex = (spinnerIndex + 1) % spinnerFrames.length;
-    loadingBox.setContent(`{center}{yellow-fg}${spinnerFrames[spinnerIndex]} ${message}{/yellow-fg}{/center}`);
+    updateContent();
     screen.render();
   }, 100);
   screen.render();
@@ -180,6 +199,8 @@ function showLoading(message = "Loading...") {
 
 function hideLoading() {
   isLoading = false;
+  loadingStartTime = null;
+  loadingTimeout = null;
   if (spinnerInterval) {
     clearInterval(spinnerInterval);
     spinnerInterval = null;
@@ -371,7 +392,11 @@ async function askInstance(name, question) {
   updateStats();
   addActivity(1);
 
-  showLoading(`Asking ${name}...`);
+  // Get timeout from instance details if available (default 60s)
+  const details = instanceStatus[name + "_details"];
+  const timeout = details?.timeout || 60000;
+
+  showLoading(`Asking ${name}...`, timeout);
   messageLog.log(`{cyan-fg}[You -> ${name}]{/cyan-fg} ${question}`);
 
   const startTime = Date.now();
@@ -513,8 +538,9 @@ instanceList.on("select", (item, index) => {
   inputBox.focus();
 });
 
-// Input handling
-inputBox.on("submit", (value) => {
+// Input handling - Ctrl+Enter to send
+inputBox.key(["C-enter"], () => {
+  const value = inputBox.getValue();
   if (value && value.trim()) {
     askInstance(selectedInstance, value.trim());
   }
@@ -523,7 +549,7 @@ inputBox.on("submit", (value) => {
   screen.render();
 });
 
-inputBox.on("cancel", () => {
+inputBox.key(["escape"], () => {
   inputBox.clearValue();
   instanceList.focus();
   screen.render();
