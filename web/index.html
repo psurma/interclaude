@@ -97,6 +97,59 @@
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
+      transition: width 0.2s, min-width 0.2s;
+      position: relative;
+    }
+
+    .sidebar.collapsed {
+      width: 48px;
+      min-width: 48px;
+    }
+
+    .sidebar.collapsed .sidebar-header h2,
+    .sidebar.collapsed .instance-list,
+    .sidebar.collapsed .instance-details {
+      display: none;
+    }
+
+    .sidebar.collapsed .sidebar-header {
+      justify-content: center;
+      padding: 1rem 0.5rem;
+    }
+
+    .sidebar-toggle {
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      z-index: 10;
+      transition: all 0.2s;
+    }
+
+    .sidebar-toggle:hover {
+      background: var(--accent);
+      color: var(--bg-primary);
+      border-color: var(--accent);
+    }
+
+    .sidebar-toggle svg {
+      width: 14px;
+      height: 14px;
+      transition: transform 0.2s;
+    }
+
+    .sidebar.collapsed .sidebar-toggle svg {
+      transform: rotate(180deg);
     }
 
     .sidebar-header {
@@ -746,7 +799,12 @@
   </header>
 
   <div class="main-container">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
+      <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
       <div class="sidebar-header">
         <h2>Instances</h2>
         <button class="btn btn-icon" onclick="discoverInstances()" title="Refresh instances">
@@ -1515,8 +1573,24 @@
       }
     }
 
+    // Toggle sidebar
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      localStorage.setItem('sidebarCollapsed', isCollapsed);
+    }
+
+    // Load saved sidebar state
+    function loadSidebarState() {
+      const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+      if (isCollapsed) {
+        document.getElementById('sidebar').classList.add('collapsed');
+      }
+    }
+
     // Initialize
     loadTheme();
+    loadSidebarState();
     loadConversations();
     loadRegistry();
   </script>
