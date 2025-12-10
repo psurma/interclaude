@@ -304,6 +304,7 @@ async function discoverInstances() {
   refreshInstanceList();
   updateInstanceDetails(selectedInstance);
   messageLog.log(`{cyan-fg}Discovery complete: ${discovered}/${instances.length} online{/cyan-fg}`);
+  instanceList.focus();
 }
 
 // Send question to instance
@@ -440,6 +441,33 @@ screen.key(["tab"], () => {
     inputBox.focus();
   } else {
     instanceList.focus();
+  }
+});
+
+// Arrow keys for instance navigation (global fallback)
+screen.key(["up", "k"], () => {
+  if (screen.focused !== inputBox) {
+    instanceList.up();
+    const index = instanceList.selected;
+    const name = Object.keys(registry.instances)[index];
+    if (name) {
+      selectedInstance = name;
+      updateInstanceDetails(name);
+    }
+    screen.render();
+  }
+});
+
+screen.key(["down", "j"], () => {
+  if (screen.focused !== inputBox) {
+    instanceList.down();
+    const index = instanceList.selected;
+    const name = Object.keys(registry.instances)[index];
+    if (name) {
+      selectedInstance = name;
+      updateInstanceDetails(name);
+    }
+    screen.render();
   }
 });
 
