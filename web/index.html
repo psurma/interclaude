@@ -203,6 +203,13 @@
     .status-dot.online { background: var(--success); }
     .status-dot.offline { background: var(--error); }
     .status-dot.checking { background: var(--warning); animation: pulse 1s infinite; }
+    .status-dot.loading { animation: pulse 0.5s infinite; }
+
+    .instance-loading-badge {
+      font-size: 0.625rem;
+      color: var(--accent);
+      animation: pulse 0.5s infinite;
+    }
 
     @keyframes pulse {
       0%, 100% { opacity: 1; }
@@ -805,12 +812,10 @@
     let registry = { instances: {}, default: null };
     let instanceStatus = {};
     let selectedInstance = null;
-    let isLoading = false;
+    let loadingInstances = {}; // { instanceName: { timer, startTime, loadingId } }
     let totalRequests = 0;
     let totalResponses = 0;
     let avgResponseTime = 0;
-    let loadingTimer = null;
-    let loadingStartTime = null;
     let conversations = {}; // { instanceName: [{ type, content, sender, duration, time }] }
 
     // Load registry
@@ -852,11 +857,13 @@
       list.innerHTML = Object.entries(registry.instances).map(([name, instance]) => {
         const status = instanceStatus[name] || 'checking';
         const isSelected = name === selectedInstance;
+        const isLoading = !!loadingInstances[name];
         return `
-          <div class="instance-item ${isSelected ? 'selected' : ''}" onclick="selectInstance('${name}')">
+          <div class="instance-item ${isSelected ? 'selected' : ''} ${isLoading ? 'loading' : ''}" onclick="selectInstance('${name}')">
             <div class="name">
-              <span class="status-dot ${status}"></span>
+              <span class="status-dot ${status} ${isLoading ? 'loading' : ''}"></span>
               ${name}
+              ${isLoading ? '<span class="instance-loading-badge">...</span>' : ''}
             </div>
             <div class="description">${instance.description || instance.host + ':' + instance.port}</div>
           </div>
@@ -929,6 +936,7 @@
       renderInstanceList();
       renderConversation();
       updateConversationTitle();
+      updateSendButton();
     }
 
     // Update input hint
@@ -983,22 +991,36 @@
       const input = document.getElementById('question-input');
       const question = input.value.trim();
 
-      if (!question || !selectedInstance || isLoading) return;
+      if (!question || !selectedInstance) return;
 
-      const instance = registry.instances[selectedInstance];
+      const targetInstance = selectedInstance;
+      const instance = registry.instances[targetInstance];
       if (!instance) return;
 
-      isLoading = true;
-      input.value = '';
-      document.getElementById('send-btn').disabled = true;
+      // Check if this specific instance is already loading
+      if (loadingInstances[targetInstance]) {
+        showToast(`${targetInstance} is already processing a request`, 'error');
+        return;
+      }
 
-      // Add user message
+      input.value = '';
+
+      // Add user message to target instance's conversation
+      const prevSelected = selectedInstance;
+      selectedInstance = targetInstance;
       addMessage('user', question);
 
-      // Show loading
-      const loadingId = showLoading();
+      // Show loading for this instance
+      const loadingId = showLoading(targetInstance);
+      loadingInstances[targetInstance] = {
+        loadingId,
+        startTime: Date.now()
+      };
+
       totalRequests++;
       updateStats();
+      updateSendButton();
+      renderInstanceList();
 
       const startTime = Date.now();
 
@@ -1019,20 +1041,39 @@
         totalResponses++;
         updateStats();
 
+        // Switch back to target instance to add response
+        selectedInstance = targetInstance;
+
         if (response.ok) {
           const data = await response.json();
-          addMessage('assistant', data.answer, data.instance_name || selectedInstance, duration);
+          addMessage('assistant', data.answer, data.instance_name || targetInstance, duration);
         } else {
           const data = await response.json();
           addMessage('error', data.error || 'Unknown error');
         }
       } catch (e) {
-        addMessage('error', `Failed to reach ${selectedInstance}: ${e.message}`);
+        selectedInstance = targetInstance;
+        addMessage('error', `Failed to reach ${targetInstance}: ${e.message}`);
       }
 
-      hideLoading(loadingId);
-      isLoading = false;
-      document.getElementById('send-btn').disabled = false;
+      hideLoading(loadingId, targetInstance);
+      delete loadingInstances[targetInstance];
+
+      // Restore selected instance and update UI
+      selectedInstance = prevSelected;
+      renderInstanceList();
+      renderConversation();
+      updateSendButton();
+    }
+
+    // Update send button based on current instance loading state
+    function updateSendButton() {
+      const btn = document.getElementById('send-btn');
+      if (selectedInstance && instanceStatus[selectedInstance] === 'online' && !loadingInstances[selectedInstance]) {
+        btn.disabled = false;
+      } else {
+        btn.disabled = true;
+      }
     }
 
     // Add message to chat
@@ -1254,36 +1295,42 @@
     }
 
     // Show loading indicator
-    function showLoading() {
+    function showLoading(instanceName) {
       const messages = document.getElementById('messages');
       const loadingDiv = document.createElement('div');
+      const loadingId = `loading-${instanceName}-${Date.now()}`;
       loadingDiv.className = 'loading';
-      loadingDiv.id = 'loading-indicator';
+      loadingDiv.id = loadingId;
+      loadingDiv.dataset.instance = instanceName;
 
-      loadingStartTime = Date.now();
+      const startTime = Date.now();
       loadingDiv.innerHTML = `
         <div class="spinner"></div>
-        <span>Waiting for response...</span>
-        <span class="timer" id="loading-timer">0s</span>
+        <span>Waiting for ${instanceName}...</span>
+        <span class="timer">0s</span>
       `;
 
       messages.appendChild(loadingDiv);
       messages.scrollTop = messages.scrollHeight;
 
-      loadingTimer = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - loadingStartTime) / 1000);
-        const timerEl = document.getElementById('loading-timer');
+      const timer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const timerEl = loadingDiv.querySelector('.timer');
         if (timerEl) timerEl.textContent = `${elapsed}s`;
       }, 1000);
 
-      return loadingDiv.id;
+      // Store timer reference in the loading state
+      if (loadingInstances[instanceName]) {
+        loadingInstances[instanceName].timer = timer;
+      }
+
+      return loadingId;
     }
 
     // Hide loading indicator
-    function hideLoading(id) {
-      if (loadingTimer) {
-        clearInterval(loadingTimer);
-        loadingTimer = null;
+    function hideLoading(id, instanceName) {
+      if (loadingInstances[instanceName] && loadingInstances[instanceName].timer) {
+        clearInterval(loadingInstances[instanceName].timer);
       }
       const loading = document.getElementById(id);
       if (loading) loading.remove();
