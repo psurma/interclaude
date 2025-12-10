@@ -157,8 +157,11 @@ const loadingBox = blessed.box({
 
 // Spinner frames
 const spinnerFrames = ["", "", "", "", "", "", "", "", "", ""];
+const listSpinnerFrames = ["◐", "◓", "◑", "◒"];
 let spinnerIndex = 0;
+let listSpinnerIndex = 0;
 let spinnerInterval = null;
+let listSpinnerInterval = null;
 
 function showLoading(message = "Loading...") {
   isLoading = true;
@@ -191,17 +194,42 @@ function addActivity(value) {
   activityLine.setData(["Requests"], [activityData]);
 }
 
-// Populate instance list
-function refreshInstanceList() {
-  const items = Object.keys(registry.instances).map((name) => {
+// Start list spinner for unknown statuses
+function startListSpinner() {
+  if (listSpinnerInterval) return;
+  listSpinnerInterval = setInterval(() => {
+    listSpinnerIndex = (listSpinnerIndex + 1) % listSpinnerFrames.length;
+    updateInstanceListItems();
+    screen.render();
+  }, 150);
+}
+
+// Stop list spinner
+function stopListSpinner() {
+  if (listSpinnerInterval) {
+    clearInterval(listSpinnerInterval);
+    listSpinnerInterval = null;
+  }
+}
+
+// Update instance list items (used by spinner)
+function updateInstanceListItems() {
+  const names = Object.keys(registry.instances);
+  const items = names.map((name) => {
     const status = instanceStatus[name];
-    const statusIcon = status === "online" ? "[ON] " : status === "offline" ? "[OFF]" : "[?]  ";
+    let statusIcon;
+    if (status === "online") {
+      statusIcon = " ● ";
+    } else if (status === "offline") {
+      statusIcon = " ○ ";
+    } else {
+      statusIcon = ` ${listSpinnerFrames[listSpinnerIndex]} `;
+    }
     return `${statusIcon} ${name}`;
   });
   instanceList.setItems(items);
 
   // Color the items based on status
-  const names = Object.keys(registry.instances);
   names.forEach((name, i) => {
     const status = instanceStatus[name];
     const item = instanceList.items[i];
@@ -215,6 +243,22 @@ function refreshInstanceList() {
       }
     }
   });
+}
+
+// Populate instance list
+function refreshInstanceList() {
+  updateInstanceListItems();
+
+  // Check if any instances have unknown status
+  const hasUnknown = Object.keys(registry.instances).some(
+    (name) => !instanceStatus[name] || (instanceStatus[name] !== "online" && instanceStatus[name] !== "offline")
+  );
+
+  if (hasUnknown) {
+    startListSpinner();
+  } else {
+    stopListSpinner();
+  }
 
   screen.render();
 }
