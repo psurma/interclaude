@@ -215,6 +215,8 @@ function stopListSpinner() {
 // Update instance list items (used by spinner)
 function updateInstanceListItems() {
   const names = Object.keys(registry.instances);
+  const currentSelection = instanceList.selected;
+
   const items = names.map((name) => {
     const status = instanceStatus[name];
     let statusIcon;
@@ -228,6 +230,11 @@ function updateInstanceListItems() {
     return `${statusIcon} ${name}`;
   });
   instanceList.setItems(items);
+
+  // Restore selection
+  if (currentSelection !== undefined && currentSelection < items.length) {
+    instanceList.select(currentSelection);
+  }
 
   // Color the items based on status
   names.forEach((name, i) => {
