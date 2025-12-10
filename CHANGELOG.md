@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.13] - 2024-12-10
+
+### Added
+
+- Display version number in server startup log
+
+## [0.0.12] - 2024-12-10
+
+### Added
+
+- CORS support for cross-origin requests from Web UI to remote instances
+
+## [0.0.11] - 2024-12-10
+
+### Added
+
+- Light/dark mode toggle for Web UI
+- Theme preference persisted in localStorage
+- Sun/moon icons for theme toggle button
+
 ## [0.0.10] - 2024-12-10
 
 ### Added

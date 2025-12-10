@@ -71,6 +71,19 @@ async function executeWithConcurrencyLimit(fn) {
 const app = express();
 app.use(express.json());
 
+// CORS middleware - allow cross-origin requests from Web UI
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, X-API-Key");
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
@@ -201,7 +214,7 @@ app.listen(PORT, HOST, () => {
   const instanceInfo = getInstanceInfo();
   const localIPs = getLocalIPs();
 
-  logger.info(`InterClaude server started`, {
+  logger.info(`InterClaude v${version} started`, {
     host: HOST,
     port: PORT,
     instanceName: instanceInfo.instanceName,
