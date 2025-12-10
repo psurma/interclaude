@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.14] - 2024-12-10
+
+### Added
+
+- Conversation persistence per instance (saved to localStorage)
+- Clear conversation button with trash icon
+- Human-readable duration format (e.g., "1m 30s" instead of "89821ms")
+- Resizable input panel (drag handle at top)
+- Log actual question and answer in server logs (first 500 chars)
+
+### Fixed
+
+- Send button no longer stretches when resizing input panel
+
 ## [0.0.13] - 2024-12-10
 
 ### Added

@@ -216,6 +216,17 @@
       overflow: hidden;
     }
 
+    .messages-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1.5rem;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
     .messages {
       flex: 1;
       overflow-y: auto;
@@ -330,23 +341,62 @@
       background: var(--bg-secondary);
       border-top: 1px solid var(--border);
       padding: 1rem 1.5rem;
+      min-height: 100px;
+      position: relative;
+    }
+
+    .resize-handle {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      cursor: ns-resize;
+      background: transparent;
+      transition: background 0.2s;
+    }
+
+    .resize-handle:hover,
+    .resize-handle.dragging {
+      background: var(--accent);
+    }
+
+    .resize-handle::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    .resize-handle:hover::before,
+    .resize-handle.dragging::before {
+      background: var(--accent);
     }
 
     .input-container {
       display: flex;
       gap: 0.75rem;
-      align-items: flex-end;
+      align-items: flex-start;
+      height: calc(100% - 30px);
+      padding-top: 10px;
     }
 
     .input-wrapper {
       flex: 1;
       position: relative;
+      display: flex;
+      flex-direction: column;
     }
 
     textarea {
       width: 100%;
-      min-height: 60px;
-      max-height: 200px;
+      flex: 1;
+      min-height: 40px;
       padding: 0.75rem 1rem;
       background: var(--bg-primary);
       border: 1px solid var(--border);
@@ -571,6 +621,15 @@
     </aside>
 
     <main class="content">
+      <div class="messages-header">
+        <span id="conversation-title">Conversation</span>
+        <button class="btn btn-icon" onclick="clearConversation()" title="Clear conversation">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+      </div>
       <div class="messages" id="messages">
         <div class="empty-state">
           <h3>Welcome to InterClaude</h3>
@@ -578,7 +637,8 @@
         </div>
       </div>
 
-      <div class="input-area">
+      <div class="input-area" id="input-area">
+        <div class="resize-handle" id="resize-handle"></div>
         <div class="input-container">
           <div class="input-wrapper">
             <textarea
@@ -622,6 +682,7 @@
     let avgResponseTime = 0;
     let loadingTimer = null;
     let loadingStartTime = null;
+    let conversations = {}; // { instanceName: [{ type, content, sender, duration, time }] }
 
     // Load registry
     async function loadRegistry() {
@@ -630,9 +691,22 @@
         registry = await response.json();
         selectedInstance = registry.default || Object.keys(registry.instances)[0];
         renderInstanceList();
+        renderConversation();
+        updateConversationTitle();
         discoverInstances();
       } catch (e) {
         showToast('Failed to load registry', 'error');
+      }
+    }
+
+    // Update conversation title
+    function updateConversationTitle() {
+      const title = document.getElementById('conversation-title');
+      if (selectedInstance) {
+        const msgCount = (conversations[selectedInstance] || []).length;
+        title.textContent = `${selectedInstance} (${msgCount} messages)`;
+      } else {
+        title.textContent = 'Conversation';
       }
     }
 
@@ -700,6 +774,8 @@
     function selectInstance(name) {
       selectedInstance = name;
       renderInstanceList();
+      renderConversation();
+      updateConversationTitle();
     }
 
     // Update input hint
@@ -802,7 +878,7 @@
     }
 
     // Add message to chat
-    function addMessage(type, content, sender = null, duration = null) {
+    function addMessage(type, content, sender = null, duration = null, save = true) {
       const messages = document.getElementById('messages');
 
       // Remove empty state if present
@@ -813,6 +889,7 @@
       messageDiv.className = 'message';
 
       const time = new Date().toLocaleTimeString();
+      const timestamp = new Date().toISOString();
       const durationStr = duration ? ` (${duration}ms)` : '';
 
       if (type === 'user') {
@@ -859,6 +936,76 @@
       messageDiv.querySelectorAll('pre code').forEach(block => {
         hljs.highlightElement(block);
       });
+
+      // Save to conversation history
+      if (save && selectedInstance) {
+        if (!conversations[selectedInstance]) {
+          conversations[selectedInstance] = [];
+        }
+        conversations[selectedInstance].push({
+          type,
+          content,
+          sender,
+          duration,
+          time: timestamp
+        });
+        saveConversations();
+      }
+    }
+
+    // Render conversation for selected instance
+    function renderConversation() {
+      const messages = document.getElementById('messages');
+      const conv = conversations[selectedInstance] || [];
+
+      if (conv.length === 0) {
+        messages.innerHTML = `
+          <div class="empty-state">
+            <h3>Welcome to InterClaude</h3>
+            <p>Select an instance and ask a question to get started.</p>
+          </div>
+        `;
+        return;
+      }
+
+      messages.innerHTML = '';
+      for (const msg of conv) {
+        addMessage(msg.type, msg.content, msg.sender, msg.duration, false);
+      }
+    }
+
+    // Save conversations to localStorage
+    function saveConversations() {
+      localStorage.setItem('conversations', JSON.stringify(conversations));
+      updateConversationTitle();
+    }
+
+    // Load conversations from localStorage
+    function loadConversations() {
+      const saved = localStorage.getItem('conversations');
+      if (saved) {
+        try {
+          conversations = JSON.parse(saved);
+        } catch (e) {
+          conversations = {};
+        }
+      }
+    }
+
+    // Clear conversation for current instance
+    function clearConversation() {
+      if (selectedInstance) {
+        if (!conversations[selectedInstance] || conversations[selectedInstance].length === 0) {
+          showToast('No conversation to clear', 'error');
+          return;
+        }
+        if (confirm(`Clear conversation history for ${selectedInstance}?`)) {
+          delete conversations[selectedInstance];
+          saveConversations();
+          renderConversation();
+          showToast('Conversation cleared', 'success');
+        }
+      }
     }
 
     // Show loading indicator
@@ -897,10 +1044,24 @@
       if (loading) loading.remove();
     }
 
+    // Format duration to human readable
+    function formatDuration(ms) {
+      if (ms < 1000) return `${Math.round(ms)}ms`;
+      if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+      if (ms < 3600000) {
+        const mins = Math.floor(ms / 60000);
+        const secs = Math.round((ms % 60000) / 1000);
+        return `${mins}m ${secs}s`;
+      }
+      const hours = Math.floor(ms / 3600000);
+      const mins = Math.round((ms % 3600000) / 60000);
+      return `${hours}h ${mins}m`;
+    }
+
     // Update stats
     function updateStats() {
       document.getElementById('stat-requests').textContent = totalRequests;
-      document.getElementById('stat-avg-time').textContent = `${Math.round(avgResponseTime)}ms`;
+      document.getElementById('stat-avg-time').textContent = formatDuration(avgResponseTime);
     }
 
     // Copy to clipboard
@@ -938,11 +1099,47 @@
       }
     });
 
-    // Auto-resize textarea
-    document.getElementById('question-input').addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+    // Resize handle for input area
+    const resizeHandle = document.getElementById('resize-handle');
+    const inputArea = document.getElementById('input-area');
+    let isResizing = false;
+    let startY = 0;
+    let startHeight = 0;
+
+    resizeHandle.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      startY = e.clientY;
+      startHeight = inputArea.offsetHeight;
+      resizeHandle.classList.add('dragging');
+      document.body.style.cursor = 'ns-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
     });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+
+      const deltaY = startY - e.clientY;
+      const newHeight = Math.max(100, Math.min(600, startHeight + deltaY));
+      inputArea.style.height = newHeight + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isResizing) {
+        isResizing = false;
+        resizeHandle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        // Save height preference
+        localStorage.setItem('inputAreaHeight', inputArea.style.height);
+      }
+    });
+
+    // Load saved input area height
+    const savedHeight = localStorage.getItem('inputAreaHeight');
+    if (savedHeight) {
+      inputArea.style.height = savedHeight;
+    }
 
     // Theme toggle
     function toggleTheme() {
@@ -974,6 +1171,7 @@
 
     // Initialize
     loadTheme();
+    loadConversations();
     loadRegistry();
   </script>
 </body>

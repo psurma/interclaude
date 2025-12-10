@@ -130,7 +130,7 @@ app.post("/ask", authenticate, async (req, res) => {
   }
 
   logger.info("Processing question", {
-    questionLength: question.length,
+    question: question.substring(0, 500) + (question.length > 500 ? '...' : ''),
     hasContext: !!context,
     hasSession: !!session_id,
   });
@@ -143,6 +143,7 @@ app.post("/ask", authenticate, async (req, res) => {
     logger.info("Question answered successfully", {
       duration: result.duration,
       sessionId: result.sessionId,
+      answer: result.response.substring(0, 500) + (result.response.length > 500 ? '...' : ''),
     });
 
     res.json({
