@@ -211,6 +211,21 @@
       animation: pulse 0.5s infinite;
     }
 
+    .retry-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      margin-top: 0.75rem;
+      padding: 0.375rem 0.75rem;
+      font-size: 0.8125rem;
+    }
+
+    .error-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
@@ -1053,16 +1068,20 @@
         }
       } catch (e) {
         selectedInstance = targetInstance;
-        addMessage('error', `Failed to reach ${targetInstance}: ${e.message}`);
+        addMessage('error', `Failed to reach ${targetInstance}: ${e.message}`, null, null, true, question);
       }
 
       hideLoading(loadingId, targetInstance);
       delete loadingInstances[targetInstance];
 
-      // Restore selected instance and update UI
-      selectedInstance = prevSelected;
-      renderInstanceList();
-      renderConversation();
+      // Update UI - stay on target instance if that's where we started
+      if (prevSelected === targetInstance) {
+        renderInstanceList();
+        renderConversation();
+      } else {
+        selectedInstance = prevSelected;
+        renderInstanceList();
+      }
       updateSendButton();
     }
 
@@ -1076,8 +1095,29 @@
       }
     }
 
+    // Retry a failed question
+    function retryQuestion(btn) {
+      const messageDiv = btn.closest('.message');
+      const question = messageDiv.dataset.retryQuestion;
+      if (question) {
+        // Remove the error message from DOM and conversation history
+        const conv = conversations[selectedInstance];
+        if (conv) {
+          // Remove the last two messages (user question and error)
+          conv.splice(-2, 2);
+          saveConversations();
+        }
+        messageDiv.previousElementSibling?.remove(); // Remove user message
+        messageDiv.remove(); // Remove error message
+
+        // Put the question back in the input and send
+        document.getElementById('question-input').value = question;
+        sendQuestion();
+      }
+    }
+
     // Add message to chat
-    function addMessage(type, content, sender = null, duration = null, save = true) {
+    function addMessage(type, content, sender = null, duration = null, save = true, retryQuestion = null) {
       const messages = document.getElementById('messages');
 
       // Remove empty state if present
@@ -1128,13 +1168,27 @@
         // Store raw content for copying
         messageDiv.querySelector('.message-content').dataset.raw = content;
       } else if (type === 'error') {
+        const retryBtn = retryQuestion ? `
+          <button class="btn btn-secondary retry-btn" onclick="retryQuestion(this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            Retry
+          </button>
+        ` : '';
         messageDiv.innerHTML = `
           <div class="message-header">
             <span class="message-sender" style="color: var(--error)">Error</span>
             <span class="message-time">${time}</span>
           </div>
-          <div class="message-content" style="border-left: 3px solid var(--error)">${escapeHtml(content)}</div>
+          <div class="message-content error-content" style="border-left: 3px solid var(--error)">
+            ${escapeHtml(content)}
+            ${retryBtn}
+          </div>
         `;
+        if (retryQuestion) {
+          messageDiv.dataset.retryQuestion = retryQuestion;
+        }
       }
 
       messages.appendChild(messageDiv);
