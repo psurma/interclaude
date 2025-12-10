@@ -202,9 +202,17 @@ function startListSpinner() {
   if (listSpinnerInterval) return;
   listSpinnerInterval = setInterval(() => {
     listSpinnerIndex = (listSpinnerIndex + 1) % listSpinnerFrames.length;
-    updateInstanceListItems();
-    screen.render();
-  }, 150);
+    // Only update if there are unknown statuses and not navigating
+    const hasUnknown = Object.keys(registry.instances).some(
+      (name) => !instanceStatus[name] || (instanceStatus[name] !== "online" && instanceStatus[name] !== "offline")
+    );
+    if (hasUnknown) {
+      updateInstanceListItems();
+      screen.render();
+    } else {
+      stopListSpinner();
+    }
+  }, 200);
 }
 
 // Stop list spinner
@@ -490,6 +498,7 @@ screen.key(["tab"], () => {
 // Arrow keys for instance navigation (global fallback)
 screen.key(["up", "k"], () => {
   if (screen.focused !== inputBox) {
+    stopListSpinner(); // Stop spinner during navigation
     instanceList.up();
     const index = instanceList.selected;
     const name = Object.keys(registry.instances)[index];
@@ -503,6 +512,7 @@ screen.key(["up", "k"], () => {
 
 screen.key(["down", "j"], () => {
   if (screen.focused !== inputBox) {
+    stopListSpinner(); // Stop spinner during navigation
     instanceList.down();
     const index = instanceList.selected;
     const name = Object.keys(registry.instances)[index];
