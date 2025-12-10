@@ -195,10 +195,27 @@ function addActivity(value) {
 function refreshInstanceList() {
   const items = Object.keys(registry.instances).map((name) => {
     const status = instanceStatus[name];
-    const statusIcon = status === "online" ? "{green-fg}{/green-fg}" : status === "offline" ? "{red-fg}{/red-fg}" : "{yellow-fg}?{/yellow-fg}";
+    const statusIcon = status === "online" ? "[ON] " : status === "offline" ? "[OFF]" : "[?]  ";
     return `${statusIcon} ${name}`;
   });
   instanceList.setItems(items);
+
+  // Color the items based on status
+  const names = Object.keys(registry.instances);
+  names.forEach((name, i) => {
+    const status = instanceStatus[name];
+    const item = instanceList.items[i];
+    if (item) {
+      if (status === "online") {
+        item.style = { fg: "green" };
+      } else if (status === "offline") {
+        item.style = { fg: "red" };
+      } else {
+        item.style = { fg: "yellow" };
+      }
+    }
+  });
+
   screen.render();
 }
 
