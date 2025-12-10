@@ -8,11 +8,11 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { networkInterfaces } from 'os';
 
-// Load environment variables
-config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Load environment variables from project root
+config({ path: join(__dirname, '..', '.env') });
 
 // Get version from package.json
 let version = '0.1.0';
