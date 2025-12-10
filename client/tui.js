@@ -48,14 +48,17 @@ const header = grid.set(0, 0, 1, 12, blessed.box, {
 const instanceList = grid.set(1, 0, 5, 3, blessed.list, {
   label: " Instances ",
   border: { type: "line" },
+  tags: true,
   style: {
     border: { fg: "cyan" },
-    selected: { bg: "cyan", fg: "black" },
+    selected: { bg: "cyan", fg: "black", bold: true },
     item: { fg: "white" },
+    focus: { border: { fg: "yellow" } },
   },
   keys: true,
   vi: true,
   mouse: true,
+  interactive: true,
   scrollbar: {
     ch: " ",
     style: { bg: "cyan" },
@@ -212,6 +215,17 @@ function stopListSpinner() {
   }
 }
 
+// Get status indicator with color codes for list
+function getStatusIndicator(status) {
+  if (status === "online") {
+    return "{green-fg}●{/green-fg}";
+  } else if (status === "offline") {
+    return "{red-fg}○{/red-fg}";
+  } else {
+    return `{yellow-fg}${listSpinnerFrames[listSpinnerIndex]}{/yellow-fg}`;
+  }
+}
+
 // Update instance list items (used by spinner)
 function updateInstanceListItems() {
   const names = Object.keys(registry.instances);
@@ -219,15 +233,8 @@ function updateInstanceListItems() {
 
   const items = names.map((name) => {
     const status = instanceStatus[name];
-    let statusIcon;
-    if (status === "online") {
-      statusIcon = " ● ";
-    } else if (status === "offline") {
-      statusIcon = " ○ ";
-    } else {
-      statusIcon = ` ${listSpinnerFrames[listSpinnerIndex]} `;
-    }
-    return `${statusIcon} ${name}`;
+    const indicator = getStatusIndicator(status);
+    return ` ${indicator}  ${name}`;
   });
   instanceList.setItems(items);
 
@@ -235,21 +242,6 @@ function updateInstanceListItems() {
   if (currentSelection !== undefined && currentSelection < items.length) {
     instanceList.select(currentSelection);
   }
-
-  // Color the items based on status
-  names.forEach((name, i) => {
-    const status = instanceStatus[name];
-    const item = instanceList.items[i];
-    if (item) {
-      if (status === "online") {
-        item.style = { fg: "green" };
-      } else if (status === "offline") {
-        item.style = { fg: "red" };
-      } else {
-        item.style = { fg: "yellow" };
-      }
-    }
-  });
 }
 
 // Populate instance list
