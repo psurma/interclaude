@@ -505,11 +505,12 @@ instanceList.on("select item", (item, index) => {
   }
 });
 
-// Instance list selection
+// Instance list selection (Enter key) - focus input
 instanceList.on("select", (item, index) => {
   const name = Object.keys(registry.instances)[index];
   selectedInstance = name;
   updateInstanceDetails(name);
+  inputBox.focus();
 });
 
 // Input handling
