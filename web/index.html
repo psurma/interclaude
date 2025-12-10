@@ -520,6 +520,38 @@
       color: var(--text-secondary);
     }
 
+    .api-key-section {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .api-key-input-wrapper {
+      display: flex;
+      gap: 0.25rem;
+      margin-top: 0.25rem;
+    }
+
+    .api-key-input {
+      flex: 1;
+      padding: 0.375rem 0.5rem;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-primary);
+      font-family: monospace;
+      font-size: 0.75rem;
+    }
+
+    .api-key-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .toggle-password {
+      padding: 0.25rem;
+    }
+
     .header-right {
       display: flex;
       align-items: center;
@@ -689,6 +721,7 @@
       try {
         const response = await fetch('/api/registry');
         registry = await response.json();
+        loadApiKeys();
         selectedInstance = registry.default || Object.keys(registry.instances)[0];
         renderInstanceList();
         renderConversation();
@@ -767,6 +800,23 @@
         ${info.persona ? `
         <div class="persona">"${info.persona}"</div>
         ` : ''}
+        <div class="api-key-section">
+          <label class="detail-label">API Key</label>
+          <div class="api-key-input-wrapper">
+            <input type="password"
+                   id="api-key-input"
+                   class="api-key-input"
+                   placeholder="Optional"
+                   value="${instance.apiKey || ''}"
+                   onchange="saveApiKey(this.value)">
+            <button class="btn btn-icon toggle-password" onclick="toggleApiKeyVisibility()" title="Show/hide API key">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </div>
       `;
     }
 
@@ -850,9 +900,14 @@
       const startTime = Date.now();
 
       try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (instance.apiKey) {
+          headers['X-API-Key'] = instance.apiKey;
+        }
+
         const response = await fetch(`http://${instance.host}:${instance.port}/ask`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ question })
         });
 
@@ -1005,6 +1060,51 @@
           renderConversation();
           showToast('Conversation cleared', 'success');
         }
+      }
+    }
+
+    // Save API key for current instance
+    function saveApiKey(key) {
+      if (selectedInstance && registry.instances[selectedInstance]) {
+        registry.instances[selectedInstance].apiKey = key;
+        saveApiKeys();
+        showToast('API key saved', 'success');
+      }
+    }
+
+    // Save API keys to localStorage
+    function saveApiKeys() {
+      const keys = {};
+      for (const [name, instance] of Object.entries(registry.instances)) {
+        if (instance.apiKey) {
+          keys[name] = instance.apiKey;
+        }
+      }
+      localStorage.setItem('apiKeys', JSON.stringify(keys));
+    }
+
+    // Load API keys from localStorage
+    function loadApiKeys() {
+      const saved = localStorage.getItem('apiKeys');
+      if (saved) {
+        try {
+          const keys = JSON.parse(saved);
+          for (const [name, key] of Object.entries(keys)) {
+            if (registry.instances[name]) {
+              registry.instances[name].apiKey = key;
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+
+    // Toggle API key visibility
+    function toggleApiKeyVisibility() {
+      const input = document.getElementById('api-key-input');
+      if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
       }
     }
 
