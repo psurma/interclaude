@@ -1,50 +1,54 @@
-import express from 'express';
-import { config } from 'dotenv';
-import { createLogger, format, transports } from 'winston';
-import { authenticate } from './middleware/auth.js';
-import { invokeClaudeCode, checkClaudeAvailability, getInstanceInfo } from './claude-handler.js';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { networkInterfaces } from 'os';
+// Load environment variables FIRST, before any other imports that use them
+import "./config.js";
+
+import express from "express";
+import { createLogger, format, transports } from "winston";
+import { authenticate } from "./middleware/auth.js";
+import {
+  invokeClaudeCode,
+  checkClaudeAvailability,
+  getInstanceInfo,
+} from "./claude-handler.js";
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+import { networkInterfaces } from "os";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load environment variables from project root
-config({ path: join(__dirname, '..', '.env') });
-
 // Get version from package.json
-let version = '0.1.0';
+let version = "0.1.0";
 try {
-  const packageJson = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8'));
+  const packageJson = JSON.parse(
+    readFileSync(join(__dirname, "..", "package.json"), "utf8"),
+  );
   version = packageJson.version;
 } catch (err) {
   // Use default version
 }
 
-const PORT = parseInt(process.env.PORT || '3001', 10);
-const HOST = process.env.HOST || '0.0.0.0';
-const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT_REQUESTS || '2', 10);
+const PORT = parseInt(process.env.PORT || "3001", 10);
+const HOST = process.env.HOST || "0.0.0.0";
+const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT_REQUESTS || "2", 10);
 
 // Logger setup
 const logger = createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: format.combine(
-    format.timestamp(),
-    format.json()
-  ),
+  level: process.env.LOG_LEVEL || "info",
+  format: format.combine(format.timestamp(), format.json()),
   transports: [
     new transports.Console({
       format: format.combine(
         format.colorize(),
         format.printf(({ level, message, timestamp, ...meta }) => {
-          const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+          const metaStr = Object.keys(meta).length
+            ? ` ${JSON.stringify(meta)}`
+            : "";
           return `${timestamp} [${level}]: ${message}${metaStr}`;
-        })
-      )
-    })
-  ]
+        }),
+      ),
+    }),
+  ],
 });
 
 // Concurrency control
@@ -52,7 +56,7 @@ let activeRequests = 0;
 
 async function executeWithConcurrencyLimit(fn) {
   if (activeRequests >= MAX_CONCURRENT) {
-    throw new Error('Server at capacity. Please retry later.');
+    throw new Error("Server at capacity. Please retry later.");
   }
 
   activeRequests++;
@@ -70,62 +74,62 @@ app.use(express.json());
 // Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
-  res.on('finish', () => {
+  res.on("finish", () => {
     const duration = Date.now() - start;
-    logger.info('Request processed', {
+    logger.info("Request processed", {
       method: req.method,
       path: req.path,
       status: res.statusCode,
       duration: `${duration}ms`,
-      ip: req.ip
+      ip: req.ip,
     });
   });
   next();
 });
 
 // Health check endpoint
-app.get('/health', async (req, res) => {
+app.get("/health", async (req, res) => {
   const claudeAvailable = await checkClaudeAvailability();
   const instanceInfo = getInstanceInfo();
 
   res.json({
-    status: 'healthy',
+    status: "healthy",
     version,
     claude_code_available: claudeAvailable,
     instance_name: instanceInfo.instanceName,
     persona: instanceInfo.persona,
     active_requests: activeRequests,
-    max_concurrent: MAX_CONCURRENT
+    max_concurrent: MAX_CONCURRENT,
   });
 });
 
 // Ask endpoint
-app.post('/ask', authenticate, async (req, res) => {
+app.post("/ask", authenticate, async (req, res) => {
   const { question, context, session_id } = req.body;
 
   // Validation
-  if (!question || typeof question !== 'string' || question.trim() === '') {
+  if (!question || typeof question !== "string" || question.trim() === "") {
     return res.status(400).json({
       success: false,
       error: 'Missing or invalid "question" field. Must be a non-empty string.',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
-  logger.info('Processing question', {
+  logger.info("Processing question", {
     questionLength: question.length,
     hasContext: !!context,
-    hasSession: !!session_id
+    hasSession: !!session_id,
   });
 
   try {
     const result = await executeWithConcurrencyLimit(() =>
-      invokeClaudeCode(question, context, session_id)
+      invokeClaudeCode(question, context, session_id),
     );
 
-    logger.info('Question answered successfully', {
+    logger.info("Question answered successfully", {
       duration: result.duration,
-      sessionId: result.sessionId
+      sessionId: result.sessionId,
     });
 
     res.json({
@@ -134,36 +138,36 @@ app.post('/ask', authenticate, async (req, res) => {
       session_id: result.sessionId,
       instance_name: result.instanceName,
       timestamp: new Date().toISOString(),
-      duration_ms: result.duration
+      duration_ms: result.duration,
     });
   } catch (error) {
-    logger.error('Error processing question', {
+    logger.error("Error processing question", {
       error: error.message,
-      questionLength: question.length
+      questionLength: question.length,
     });
 
     let statusCode = 500;
-    if (error.message.includes('timed out')) {
+    if (error.message.includes("timed out")) {
       statusCode = 504;
-    } else if (error.message.includes('capacity')) {
+    } else if (error.message.includes("capacity")) {
       statusCode = 503;
     }
 
     res.status(statusCode).json({
       success: false,
       error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  logger.error('Unhandled error', { error: err.message, stack: err.stack });
+  logger.error("Unhandled error", { error: err.message, stack: err.stack });
   res.status(500).json({
     success: false,
-    error: 'Internal server error',
-    timestamp: new Date().toISOString()
+    error: "Internal server error",
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -172,7 +176,7 @@ app.use((req, res) => {
   res.status(404).json({
     success: false,
     error: `Not found: ${req.method} ${req.path}`,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -184,7 +188,7 @@ function getLocalIPs() {
   for (const name of Object.keys(nets)) {
     for (const net of nets[name]) {
       // Skip internal (loopback) and non-IPv4 addresses
-      if (net.family === 'IPv4' && !net.internal) {
+      if (net.family === "IPv4" && !net.internal) {
         ips.push({ interface: name, address: net.address });
       }
     }
@@ -202,7 +206,7 @@ app.listen(PORT, HOST, () => {
     port: PORT,
     instanceName: instanceInfo.instanceName,
     hasPersona: !!instanceInfo.persona,
-    maxConcurrent: MAX_CONCURRENT
+    maxConcurrent: MAX_CONCURRENT,
   });
 
   logger.info(`Local: http://localhost:${PORT}`);
