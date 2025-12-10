@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
+    "tui": "node client/tui.js",
     "test": "bash test/test-roundtrip.sh"
   },
   "keywords": [
@@ -19,6 +20,8 @@
   "author": "Pete",
   "license": "MIT",
   "dependencies": {
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0",
     "dotenv": "^16.4.7",
     "express": "^5.0.1",
     "uuid": "^11.0.3",
