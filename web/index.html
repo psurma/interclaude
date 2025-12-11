@@ -43,11 +43,15 @@
       --code-bg: #f6f8fa;
     }
 
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
       background: var(--bg-primary);
       color: var(--text-primary);
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
@@ -65,6 +69,18 @@
       font-size: 1.5rem;
       font-weight: 600;
       color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .version-badge {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-tertiary);
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
     }
 
     .stats {
@@ -107,9 +123,36 @@
     }
 
     .sidebar.collapsed .sidebar-header h2,
-    .sidebar.collapsed .instance-list,
     .sidebar.collapsed .instance-details {
       display: none;
+    }
+
+    .sidebar.collapsed .instance-list {
+      padding: 0.25rem;
+    }
+
+    .sidebar.collapsed .instance-item {
+      padding: 0.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .sidebar.collapsed .instance-item .name {
+      justify-content: center;
+    }
+
+    .sidebar.collapsed .instance-item .instance-name {
+      display: none;
+    }
+
+    .sidebar.collapsed .instance-item .description {
+      display: none;
+    }
+
+    .sidebar.collapsed .instance-item .status-dot {
+      width: 12px;
+      height: 12px;
     }
 
     .sidebar.collapsed .sidebar-header {
@@ -120,8 +163,7 @@
     .sidebar-toggle {
       position: absolute;
       right: -12px;
-      top: 50%;
-      transform: translateY(-50%);
+      top: 80px;
       width: 24px;
       height: 24px;
       background: var(--bg-tertiary);
@@ -132,7 +174,7 @@
       align-items: center;
       justify-content: center;
       color: var(--text-secondary);
-      z-index: 10;
+      z-index: 100;
       transition: all 0.2s;
     }
 
@@ -289,6 +331,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      position: relative;
     }
 
     .messages-header {
@@ -304,7 +347,92 @@
 
     .messages-header-actions {
       display: flex;
-      gap: 0.25rem;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .context-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .context-toggle input {
+      display: none;
+    }
+
+    .context-toggle-switch {
+      width: 32px;
+      height: 18px;
+      background: var(--border);
+      border-radius: 9px;
+      position: relative;
+      transition: background 0.2s;
+    }
+
+    .context-toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .context-toggle input:checked + .context-toggle-switch {
+      background: var(--success);
+    }
+
+    .context-toggle input:checked + .context-toggle-switch::after {
+      transform: translateX(14px);
+    }
+
+    .context-toggle-label {
+      color: var(--text-secondary);
+    }
+
+    .context-toggle input:checked ~ .context-toggle-label {
+      color: var(--success);
+    }
+
+    .context-divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      padding: 0 1rem;
+    }
+
+    .context-divider-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .context-divider-text {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    .context-divider-text.enabled {
+      background: var(--success);
+      color: white;
+    }
+
+    .context-divider-text.disabled {
+      background: var(--border);
+      color: var(--text-secondary);
     }
 
     .messages {
@@ -372,7 +500,13 @@
     }
 
     .message-content.user {
-      background: var(--bg-tertiary);
+      background: #0066cc;
+      color: #ffffff;
+    }
+
+    :root.light .message-content.user {
+      background: #0066cc;
+      color: #ffffff;
     }
 
     .message-content pre {
@@ -437,8 +571,49 @@
       opacity: 1;
     }
 
+    .message-content-wrapper {
+      display: flex;
+      align-items: stretch;
+    }
+
+    .collapse-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      min-width: 24px;
+      margin-right: 0.5rem;
+      padding: 0;
+      background: var(--bg-tertiary);
+      border: none;
+      border-radius: 4px;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+    }
+
+    .collapse-toggle:hover {
+      color: var(--text-primary);
+      background: var(--border);
+    }
+
+    .collapse-toggle svg {
+      width: 12px;
+      height: 12px;
+      transition: transform 0.2s;
+      transform: rotate(90deg);
+    }
+
+    .collapse-toggle.collapsed svg {
+      transform: rotate(-90deg);
+    }
+
     .message-content.collapsible {
       position: relative;
+      flex: 1;
     }
 
     .message-content.collapsed {
@@ -457,42 +632,24 @@
       pointer-events: none;
     }
 
-    .collapse-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      margin-top: 0.5rem;
-      padding: 0.25rem 0.5rem;
-      background: var(--bg-tertiary);
-      border: none;
-      border-radius: 4px;
-      color: var(--text-secondary);
-      font-size: 0.75rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .collapse-toggle:hover {
-      color: var(--text-primary);
-      background: var(--border);
-    }
-
-    .collapse-toggle svg {
-      width: 12px;
-      height: 12px;
-      transition: transform 0.2s;
-    }
-
-    .collapse-toggle.collapsed svg {
-      transform: rotate(-90deg);
-    }
-
     .input-area {
       background: var(--bg-secondary);
       border-top: 1px solid var(--border);
       padding: 1rem 1.5rem;
       min-height: 100px;
-      position: relative;
+      max-height: 50vh;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      height: 150px;
+    }
+
+    .messages {
+      padding-bottom: 120px; /* Space for input area */
     }
 
     .resize-handle {
@@ -532,21 +689,24 @@
       display: flex;
       gap: 0.75rem;
       align-items: flex-start;
-      height: calc(100% - 30px);
-      padding-top: 10px;
+      flex: 1;
+      margin-top: 10px;
+      min-height: 0;
     }
 
     .input-wrapper {
       flex: 1;
-      position: relative;
       display: flex;
       flex-direction: column;
+      min-height: 0;
+      height: 100%;
     }
 
     textarea {
       width: 100%;
       flex: 1;
       min-height: 40px;
+      height: 100%;
       padding: 0.75rem 1rem;
       background: var(--bg-primary);
       border: 1px solid var(--border);
@@ -565,12 +725,6 @@
 
     textarea::placeholder {
       color: var(--text-secondary);
-    }
-
-    .input-hint {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      margin-top: 0.5rem;
     }
 
     .send-btn {
@@ -650,6 +804,8 @@
       padding: 1rem;
       border-top: 1px solid var(--border);
       font-size: 0.8125rem;
+      overflow-y: auto;
+      max-height: 50vh;
     }
 
     .instance-details .detail-row {
@@ -666,50 +822,50 @@
       margin-top: 0.75rem;
       padding-top: 0.75rem;
       border-top: 1px solid var(--border);
-      font-style: italic;
       color: var(--text-secondary);
     }
 
-    .api-key-section {
-      margin-top: 0.75rem;
-      padding-top: 0.75rem;
-      border-top: 1px solid var(--border);
-    }
-
-    .api-key-input-wrapper {
-      display: flex;
-      gap: 0.25rem;
-      margin-top: 0.25rem;
-    }
-
-    .api-key-input {
-      flex: 1;
-      padding: 0.375rem 0.5rem;
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: var(--text-primary);
-      font-family: monospace;
+    .instance-details .persona-label {
       font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.375rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
-    .api-key-input:focus {
-      outline: none;
-      border-color: var(--accent);
+    .instance-details .persona-text {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      max-height: 200px;
+      min-height: 50px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 0.5rem;
+      padding-right: 0.75rem;
+      background: var(--bg-primary);
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      word-break: break-word;
     }
 
-    .toggle-password {
-      padding: 0.25rem;
+    .instance-details .persona-text::-webkit-scrollbar {
+      width: 8px;
     }
 
-    .config-badge {
-      font-size: 0.625rem;
-      background: var(--accent);
-      color: var(--bg-primary);
-      padding: 0.125rem 0.375rem;
+    .instance-details .persona-text::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
       border-radius: 4px;
-      margin-left: 0.5rem;
-      font-weight: 500;
+    }
+
+    .instance-details .persona-text::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+      min-height: 30px;
+    }
+
+    .instance-details .persona-text::-webkit-scrollbar-thumb:hover {
+      background: var(--text-secondary);
     }
 
     .header-right {
@@ -761,7 +917,7 @@
 </head>
 <body>
   <header>
-    <h1>InterClaude</h1>
+    <h1>InterClaude <span id="app-version" class="version-badge"></span></h1>
     <div class="header-right">
       <div class="stats">
         <div class="stat">
@@ -806,7 +962,7 @@
         </svg>
       </button>
       <div class="sidebar-header">
-        <h2>Instances</h2>
+        <h2 id="instances-header">Instances (0)</h2>
         <button class="btn btn-icon" onclick="discoverInstances()" title="Refresh instances">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
@@ -821,6 +977,11 @@
       <div class="messages-header">
         <span id="conversation-title">Conversation</span>
         <div class="messages-header-actions">
+          <label class="context-toggle" title="When enabled, the instance remembers previous messages in this conversation">
+            <input type="checkbox" id="context-toggle" onchange="toggleContextMode(this.checked)">
+            <span class="context-toggle-switch"></span>
+            <span class="context-toggle-label">Context</span>
+          </label>
           <button class="btn btn-icon" onclick="collapseAll()" title="Collapse all">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="18 15 12 9 6 15"></polyline>
@@ -852,12 +1013,9 @@
           <div class="input-wrapper">
             <textarea
               id="question-input"
-              placeholder="Ask a question... (Cmd+Enter or Ctrl+Enter to send)"
+              placeholder="Select an instance to ask a question... (Enter to send, Shift+Enter for new line)"
               rows="2"
             ></textarea>
-            <div class="input-hint">
-              <span id="selected-instance-hint">No instance selected</span>
-            </div>
           </div>
           <button class="btn btn-primary send-btn" id="send-btn" onclick="sendQuestion()" disabled>
             Send
@@ -890,20 +1048,21 @@
     let totalResponses = 0;
     let avgResponseTime = 0;
     let conversations = {}; // { instanceName: [{ type, content, sender, duration, time }] }
+    let sessionIds = {}; // { instanceName: sessionId } - for context continuity
+    let contextModes = {}; // { instanceName: boolean } - per-instance context mode
 
     // Load registry
     async function loadRegistry() {
       try {
         const response = await fetch('/api/registry');
         registry = await response.json();
-        // Mark API keys that came from config file
-        for (const [name, instance] of Object.entries(registry.instances)) {
-          if (instance.apiKey) {
-            instance.apiKeyFromConfig = true;
-          }
+        // Restore saved instance or use default
+        const savedInstance = localStorage.getItem('selectedInstance');
+        if (savedInstance && registry.instances[savedInstance]) {
+          selectedInstance = savedInstance;
+        } else {
+          selectedInstance = registry.default || Object.keys(registry.instances)[0];
         }
-        loadApiKeys();
-        selectedInstance = registry.default || Object.keys(registry.instances)[0];
         renderInstanceList();
         renderConversation();
         updateConversationTitle();
@@ -927,15 +1086,19 @@
     // Render instance list
     function renderInstanceList() {
       const list = document.getElementById('instance-list');
+      const instanceNames = Object.keys(registry.instances);
+      const totalCount = instanceNames.length;
+      const onlineCount = instanceNames.filter(name => instanceStatus[name] === 'online').length;
+      document.getElementById('instances-header').textContent = `Instances (${onlineCount}/${totalCount})`;
       list.innerHTML = Object.entries(registry.instances).map(([name, instance]) => {
         const status = instanceStatus[name] || 'checking';
         const isSelected = name === selectedInstance;
         const isLoading = !!loadingInstances[name];
         return `
-          <div class="instance-item ${isSelected ? 'selected' : ''} ${isLoading ? 'loading' : ''}" onclick="selectInstance('${name}')">
+          <div class="instance-item ${isSelected ? 'selected' : ''} ${isLoading ? 'loading' : ''}" onclick="selectInstance('${name}')" title="${name} - ${status}">
             <div class="name">
-              <span class="status-dot ${status} ${isLoading ? 'loading' : ''}"></span>
-              ${name}
+              <span class="status-dot ${status} ${isLoading ? 'loading' : ''}" title="${name}"></span>
+              <span class="instance-name">${name}</span>
               ${isLoading ? '<span class="instance-loading-badge">...</span>' : ''}
             </div>
             <div class="description">${instance.description || instance.host + ':' + instance.port}</div>
@@ -981,49 +1144,37 @@
         </div>
         ` : ''}
         ${info.persona ? `
-        <div class="persona">"${info.persona}"</div>
-        ` : ''}
-        <div class="api-key-section">
-          <label class="detail-label">API Key ${instance.apiKeyFromConfig ? '<span class="config-badge">from config</span>' : ''}</label>
-          <div class="api-key-input-wrapper">
-            <input type="password"
-                   id="api-key-input"
-                   class="api-key-input"
-                   placeholder="Optional"
-                   value="${instance.apiKey || ''}"
-                   onchange="saveApiKey(this.value)">
-            <button class="btn btn-icon toggle-password" onclick="toggleApiKeyVisibility()" title="Show/hide API key">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </button>
-          </div>
+        <div class="persona">
+          <div class="persona-label">System Prompt</div>
+          <div class="persona-text">${escapeHtml(info.persona)}</div>
         </div>
+        ` : ''}
       `;
     }
 
     // Select instance
     function selectInstance(name) {
       selectedInstance = name;
+      localStorage.setItem('selectedInstance', name);
       renderInstanceList();
       renderConversation();
       updateConversationTitle();
       updateSendButton();
+      updateContextToggle();
     }
 
-    // Update input hint
+    // Update input placeholder
     function updateInputHint() {
-      const hint = document.getElementById('selected-instance-hint');
       const btn = document.getElementById('send-btn');
+      const textarea = document.getElementById('question-input');
       if (selectedInstance && instanceStatus[selectedInstance] === 'online') {
-        hint.textContent = `Sending to: ${selectedInstance}`;
+        textarea.placeholder = `Ask a question to ${selectedInstance}... (Enter to send, Shift+Enter for new line)`;
         btn.disabled = false;
       } else if (selectedInstance) {
-        hint.textContent = `${selectedInstance} is ${instanceStatus[selectedInstance] || 'checking'}`;
+        textarea.placeholder = `${selectedInstance} is ${instanceStatus[selectedInstance] || 'checking'}...`;
         btn.disabled = true;
       } else {
-        hint.textContent = 'No instance selected';
+        textarea.placeholder = 'Select an instance to ask a question...';
         btn.disabled = true;
       }
     }
@@ -1103,10 +1254,17 @@
           headers['X-API-Key'] = instance.apiKey;
         }
 
+        // Build request body with optional session_id for context continuity
+        const requestBody = { question };
+        const instanceContextMode = contextModes[targetInstance] || false;
+        if (instanceContextMode && sessionIds[targetInstance]) {
+          requestBody.session_id = sessionIds[targetInstance];
+        }
+
         const response = await fetch(`http://${instance.host}:${instance.port}/ask`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ question })
+          body: JSON.stringify(requestBody)
         });
 
         const duration = Date.now() - startTime;
@@ -1119,6 +1277,11 @@
 
         if (response.ok) {
           const data = await response.json();
+          // Save session ID for context continuity
+          if (instanceContextMode && data.session_id) {
+            sessionIds[targetInstance] = data.session_id;
+            saveSessionIds();
+          }
           addMessage('assistant', data.answer, data.instance_name || targetInstance, duration);
         } else {
           const data = await response.json();
@@ -1182,6 +1345,23 @@
       const emptyState = messages.querySelector('.empty-state');
       if (emptyState) emptyState.remove();
 
+      // Handle divider type
+      if (type === 'divider') {
+        const enabled = content === 'on';
+        const divider = document.createElement('div');
+        divider.className = 'context-divider';
+        divider.innerHTML = `
+          <span class="context-divider-line"></span>
+          <span class="context-divider-text ${enabled ? 'enabled' : 'disabled'}">
+            ${enabled ? 'Context ON - conversation will be remembered' : 'Context OFF - new conversation started'}
+          </span>
+          <span class="context-divider-line"></span>
+        `;
+        messages.appendChild(divider);
+        messages.scrollTop = messages.scrollHeight;
+        return;
+      }
+
       const messageDiv = document.createElement('div');
       messageDiv.className = `message ${type === 'user' ? 'user-message' : type === 'assistant' ? 'assistant-message' : 'error-message'}`;
 
@@ -1205,23 +1385,24 @@
             <span class="message-sender assistant">${sender || 'Assistant'}</span>
             <span class="message-time">${time}${durationStr}</span>
           </div>
-          <div class="message-content ${isLong ? 'collapsible collapsed' : ''}">
-            <button class="btn btn-icon copy-btn" onclick="copyToClipboard(this)" title="Copy to clipboard">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          <div class="message-content-wrapper">
+            ${isLong ? `
+            <button class="collapse-toggle" onclick="toggleCollapse(this)" title="Show less">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </button>
-            ${rendered}
+            ` : ''}
+            <div class="message-content ${isLong ? 'collapsible' : ''}">
+              <button class="btn btn-icon copy-btn" onclick="copyToClipboard(this)" title="Copy to clipboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+              ${rendered}
+            </div>
           </div>
-          ${isLong ? `
-          <button class="collapse-toggle collapsed" onclick="toggleCollapse(this)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-            <span>Show more</span>
-          </button>
-          ` : ''}
         `;
         // Store raw content for copying
         messageDiv.querySelector('.message-content').dataset.raw = content;
@@ -1321,75 +1502,136 @@
         }
         if (confirm(`Clear conversation history for ${selectedInstance}?`)) {
           delete conversations[selectedInstance];
+          delete sessionIds[selectedInstance]; // Clear session ID too
           saveConversations();
+          saveSessionIds();
           renderConversation();
+          updateConversationTitle();
           showToast('Conversation cleared', 'success');
         }
       }
     }
 
-    // Save API key for current instance
-    function saveApiKey(key) {
-      if (selectedInstance && registry.instances[selectedInstance]) {
-        registry.instances[selectedInstance].apiKey = key;
-        saveApiKeys();
-        showToast('API key saved', 'success');
+    // Toggle context mode for current instance
+    function toggleContextMode(enabled) {
+      if (!selectedInstance) {
+        showToast('Select an instance first', 'error');
+        document.getElementById('context-toggle').checked = false;
+        return;
+      }
+      contextModes[selectedInstance] = enabled;
+      saveContextModes();
+      if (!enabled) {
+        // Clear session ID when disabling context mode
+        delete sessionIds[selectedInstance];
+        saveSessionIds();
+      }
+      // Add divider to conversation
+      if (conversations[selectedInstance] && conversations[selectedInstance].length > 0) {
+        addContextDivider(enabled);
+      }
+      showToast(enabled ? `Context enabled for ${selectedInstance}` : `Context disabled for ${selectedInstance}`, 'success');
+    }
+
+    // Update context toggle to reflect current instance's setting
+    function updateContextToggle() {
+      const toggle = document.getElementById('context-toggle');
+      if (selectedInstance) {
+        toggle.checked = contextModes[selectedInstance] || false;
+        toggle.disabled = false;
+      } else {
+        toggle.checked = false;
+        toggle.disabled = true;
       }
     }
 
-    // Save API keys to localStorage
-    function saveApiKeys() {
-      const keys = {};
-      for (const [name, instance] of Object.entries(registry.instances)) {
-        if (instance.apiKey) {
-          keys[name] = instance.apiKey;
+    // Add context mode divider to conversation
+    function addContextDivider(enabled) {
+      const messages = document.getElementById('messages');
+      const divider = document.createElement('div');
+      divider.className = 'context-divider';
+      divider.innerHTML = `
+        <span class="context-divider-line"></span>
+        <span class="context-divider-text ${enabled ? 'enabled' : 'disabled'}">
+          ${enabled ? 'Context ON - conversation will be remembered' : 'Context OFF - new conversation started'}
+        </span>
+        <span class="context-divider-line"></span>
+      `;
+      messages.appendChild(divider);
+      messages.scrollTop = messages.scrollHeight;
+
+      // Save divider to conversation history
+      if (selectedInstance) {
+        if (!conversations[selectedInstance]) {
+          conversations[selectedInstance] = [];
         }
+        conversations[selectedInstance].push({
+          type: 'divider',
+          content: enabled ? 'on' : 'off',
+          time: new Date().toISOString()
+        });
+        saveConversations();
       }
-      localStorage.setItem('apiKeys', JSON.stringify(keys));
     }
 
-    // Load API keys from localStorage
-    function loadApiKeys() {
-      const saved = localStorage.getItem('apiKeys');
+    // Save context modes to localStorage
+    function saveContextModes() {
+      localStorage.setItem('contextModes', JSON.stringify(contextModes));
+    }
+
+    // Load context modes from localStorage
+    function loadContextModes() {
+      const saved = localStorage.getItem('contextModes');
       if (saved) {
         try {
-          const keys = JSON.parse(saved);
-          for (const [name, key] of Object.entries(keys)) {
-            if (registry.instances[name]) {
-              registry.instances[name].apiKey = key;
-            }
-          }
+          contextModes = JSON.parse(saved);
         } catch (e) {
-          // ignore
+          contextModes = {};
         }
+      }
+      // Migrate from old global contextMode if it exists
+      const oldGlobal = localStorage.getItem('contextMode');
+      if (oldGlobal !== null) {
+        // Remove old setting after migration
+        localStorage.removeItem('contextMode');
       }
     }
 
-    // Toggle API key visibility
-    function toggleApiKeyVisibility() {
-      const input = document.getElementById('api-key-input');
-      if (input) {
-        input.type = input.type === 'password' ? 'text' : 'password';
+    // Save session IDs to localStorage
+    function saveSessionIds() {
+      localStorage.setItem('sessionIds', JSON.stringify(sessionIds));
+    }
+
+    // Load session IDs from localStorage
+    function loadSessionIds() {
+      const saved = localStorage.getItem('sessionIds');
+      if (saved) {
+        try {
+          sessionIds = JSON.parse(saved);
+        } catch (e) {
+          sessionIds = {};
+        }
       }
     }
 
     // Toggle message collapse
     function toggleCollapse(btn) {
-      const messageDiv = btn.parentElement;
-      const content = messageDiv.querySelector('.message-content');
+      const wrapper = btn.parentElement;
+      const content = wrapper.querySelector('.message-content');
       const isCollapsed = content.classList.toggle('collapsed');
       btn.classList.toggle('collapsed', isCollapsed);
-      btn.querySelector('span').textContent = isCollapsed ? 'Show more' : 'Show less';
+      btn.title = isCollapsed ? 'Show more' : 'Show less';
     }
 
     // Collapse all messages
     function collapseAll() {
       document.querySelectorAll('.message-content.collapsible').forEach(content => {
         content.classList.add('collapsed');
-        const btn = content.parentElement.querySelector('.collapse-toggle');
+        const wrapper = content.parentElement;
+        const btn = wrapper.querySelector('.collapse-toggle');
         if (btn) {
           btn.classList.add('collapsed');
-          btn.querySelector('span').textContent = 'Show more';
+          btn.title = 'Show more';
         }
       });
     }
@@ -1398,10 +1640,11 @@
     function expandAll() {
       document.querySelectorAll('.message-content.collapsible').forEach(content => {
         content.classList.remove('collapsed');
-        const btn = content.parentElement.querySelector('.collapse-toggle');
+        const wrapper = content.parentElement;
+        const btn = wrapper.querySelector('.collapse-toggle');
         if (btn) {
           btn.classList.remove('collapsed');
-          btn.querySelector('span').textContent = 'Show less';
+          btn.title = 'Show less';
         }
       });
     }
@@ -1497,10 +1740,11 @@
 
     // Handle textarea keyboard shortcuts
     document.getElementById('question-input').addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendQuestion();
       }
+      // Shift+Enter allows default behavior (new line)
     });
 
     // Resize handle for input area
@@ -1536,14 +1780,26 @@
         document.body.style.userSelect = '';
         // Save height preference
         localStorage.setItem('inputAreaHeight', inputArea.style.height);
+        updateMessagesPadding();
       }
     });
+
+    // Update messages padding based on input area height
+    function updateMessagesPadding() {
+      const inputArea = document.getElementById('input-area');
+      const messages = document.getElementById('messages');
+      if (inputArea && messages) {
+        messages.style.paddingBottom = (inputArea.offsetHeight + 20) + 'px';
+      }
+    }
 
     // Load saved input area height
     const savedHeight = localStorage.getItem('inputAreaHeight');
     if (savedHeight) {
       inputArea.style.height = savedHeight;
     }
+    // Initial padding update after a short delay to let DOM settle
+    setTimeout(updateMessagesPadding, 100);
 
     // Theme toggle
     function toggleTheme() {
@@ -1588,11 +1844,31 @@
       }
     }
 
+    // Load version
+    async function loadVersion() {
+      try {
+        const response = await fetch('/api/version');
+        const data = await response.json();
+        if (data.version) {
+          document.getElementById('app-version').textContent = `v${data.version}`;
+        } else {
+          document.getElementById('app-version').style.display = 'none';
+        }
+      } catch (e) {
+        // Version not available - hide the badge
+        document.getElementById('app-version').style.display = 'none';
+      }
+    }
+
     // Initialize
     loadTheme();
     loadSidebarState();
     loadConversations();
+    loadSessionIds();
+    loadContextModes();
+    loadVersion();
     loadRegistry();
+    updateContextToggle();
   </script>
 </body>
 </html>

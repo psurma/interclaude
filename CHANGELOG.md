@@ -5,6 +5,155 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.41] - 2024-12-11
+
+### Changed
+
+- Context toggle is now per-instance (each instance can have its own context setting)
+- Context settings persisted separately per instance in localStorage
+- Toast messages now show instance name when toggling context
+
+### Migration
+
+- Old global context mode setting automatically removed on upgrade
+
+## [0.0.40] - 2024-12-11
+
+### Fixed
+
+- Fixed layout so input pane stays visible at bottom (html/body overflow:hidden, height:100%)
+
+## [0.0.39] - 2024-12-11
+
+### Fixed
+
+- Input pane now properly sticks to bottom of window
+
+## [0.0.38] - 2024-12-11
+
+### Added
+
+- Visual divider in conversation when context mode is toggled on/off
+- Dividers are persisted in conversation history
+
+## [0.0.37] - 2024-12-11
+
+### Added
+
+- Context toggle in conversation header (enables conversation memory with instances)
+- Session ID tracking for conversation continuity using Claude's --resume flag
+- Context mode preference persisted in localStorage
+
+### Fixed
+
+- System prompt no longer truncated to 100 characters in health endpoint
+
+## [0.0.36] - 2024-12-11
+
+### Changed
+
+- Responses now expanded by default (previously collapsed)
+
+## [0.0.35] - 2024-12-11
+
+### Added
+
+- Selected instance persisted in localStorage (remembers last used instance)
+
+## [0.0.34] - 2024-12-11
+
+### Fixed
+
+- Version badge now hidden if version API unavailable (requires web server restart)
+
+## [0.0.33] - 2024-12-11
+
+### Fixed
+
+- System prompt scrolling improved with better word wrapping
+- Instance details section now scrollable (max 50vh)
+- Scrollbar thumb has minimum height for better visibility
+
+## [0.0.32] - 2024-12-11
+
+### Changed
+
+- User chat bubbles now have blue background with white text
+
+## [0.0.31] - 2024-12-11
+
+### Removed
+
+- "Sending to: instance" hint text below textarea (info now in placeholder)
+
+## [0.0.30] - 2024-12-11
+
+### Added
+
+- Version number displayed in header next to InterClaude title
+- API endpoint `/api/version` to serve version info
+
+## [0.0.29] - 2024-12-11
+
+### Changed
+
+- Textarea placeholder now shows selected instance name (e.g., "Ask a question to sdk-developer...")
+- Placeholder updates dynamically when switching instances or when instance status changes
+
+## [0.0.28] - 2024-12-11
+
+### Fixed
+
+- System prompt scrollbar now always visible with styled scrollbar
+- Increased max-height to 200px for better readability
+
+## [0.0.27] - 2024-12-11
+
+### Changed
+
+- Collapse/expand toggle moved to vertical bar on left side of response messages
+- Toggle now uses arrow icon with tooltip instead of text label
+
+## [0.0.26] - 2024-12-11
+
+### Added
+
+- Instance count shown in sidebar header as online/total (e.g., "Instances (2/3)")
+
+## [0.0.25] - 2024-12-11
+
+### Changed
+
+- Enter now sends the message (previously Cmd/Ctrl+Enter)
+- Shift+Enter now creates a new line
+
+## [0.0.24] - 2024-12-11
+
+### Added
+
+- Full system prompt displayed in sidebar with scrollable container
+- "System Prompt" label for persona section
+
+## [0.0.23] - 2024-12-11
+
+### Removed
+
+- API key input field from sidebar (API keys still work via config file)
+
+## [0.0.22] - 2024-12-10
+
+### Added
+
+- Collapsed sidebar now shows status dots for each instance
+- Hover tooltip on collapsed instances shows name and status
+
+## [0.0.21] - 2024-12-10
+
+### Fixed
+
+- Textarea now properly expands to fill resizable input pane height
+- Sidebar toggle button now visible (increased z-index, moved to fixed position)
+
 ## [0.0.20] - 2024-12-10
 
 ### Added
