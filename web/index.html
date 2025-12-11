@@ -1407,7 +1407,7 @@
             <span class="message-sender user">You</span>
             <span class="message-time">${time}</span>
           </div>
-          <div class="message-content user">${escapeHtml(content)}</div>
+          <div class="message-content user">${escapeHtml(content).replace(/\n/g, '<br>')}</div>
         `;
       } else if (type === 'assistant') {
         const rendered = marked.parse(content);

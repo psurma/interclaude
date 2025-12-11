@@ -1,6 +1,6 @@
 {
   "name": "interclaude",
-  "version": "0.0.44",
+  "version": "0.0.45",
   "description": "Claude Code Inter-Instance Communication - Enable multiple Claude Code instances to communicate over HTTP",
   "type": "module",
   "main": "server/index.js",
