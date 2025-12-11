@@ -5,19 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.52] - 2024-12-11
+
+### Changed
+
+- Web UI: Reverted instance response backgrounds to default grey
+
 ## [0.0.51] - 2024-12-11
 
 ### Added
 
 - Server console logs now show instance name with colored background badge
 - Color is consistent per instance name (based on hash)
-
-## [0.0.50] - 2024-12-11
-
-### Added
-
-- Web UI: Instance responses now have unique background colors based on instance name
-- Colors are consistent (same instance always gets same color)
 
 ## [0.0.49] - 2024-12-11
 

@@ -1099,32 +1099,6 @@
     let conversations = {}; // { instanceName: [{ type, content, sender, duration, time }] }
     let sessionIds = {}; // { instanceName: sessionId } - for context continuity
     let contextModes = {}; // { instanceName: boolean } - per-instance context mode
-    let instanceColors = {}; // { instanceName: { bg, text } } - cached colors per instance
-
-    // Generate a consistent color for an instance name
-    function getInstanceColor(instanceName) {
-      if (instanceColors[instanceName]) {
-        return instanceColors[instanceName];
-      }
-
-      // Hash the instance name to get a consistent hue
-      let hash = 0;
-      for (let i = 0; i < instanceName.length; i++) {
-        hash = instanceName.charCodeAt(i) + ((hash << 5) - hash);
-      }
-
-      // Generate HSL color with good saturation and lightness for dark theme
-      const hue = Math.abs(hash) % 360;
-      const saturation = 45 + (Math.abs(hash >> 8) % 20); // 45-65%
-      const lightness = 25 + (Math.abs(hash >> 16) % 10); // 25-35% for dark bg
-
-      const bg = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-      const textLightness = 90; // Light text for dark backgrounds
-      const text = `hsl(${hue}, ${saturation}%, ${textLightness}%)`;
-
-      instanceColors[instanceName] = { bg, text, hue };
-      return instanceColors[instanceName];
-    }
 
     // Load registry
     async function loadRegistry() {
@@ -1460,10 +1434,9 @@
         const rendered = marked.parse(content);
         const isLong = content.length > 300 || content.split('\n').length > 5;
         const relativeTime = formatRelativeTime(timestamp);
-        const instanceColor = getInstanceColor(sender || 'Assistant');
         messageDiv.innerHTML = `
           <div class="message-header">
-            <span class="message-sender assistant" style="color: ${instanceColor.text}">${sender || 'Assistant'}</span>
+            <span class="message-sender assistant">${sender || 'Assistant'}</span>
             <span class="message-time">${time}${durationStr} - <span class="message-relative-time" data-timestamp="${timestamp}">${relativeTime}</span></span>
           </div>
           <div class="message-content-wrapper">
@@ -1474,7 +1447,7 @@
               </svg>
             </button>
             ` : ''}
-            <div class="message-content ${isLong ? 'collapsible' : ''}" style="background: ${instanceColor.bg}">
+            <div class="message-content ${isLong ? 'collapsible' : ''}">
               <button class="btn btn-icon copy-btn" onclick="copyToClipboard(this)" title="Copy to clipboard">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
