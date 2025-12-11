@@ -51,6 +51,20 @@ const MEMORY_MAX_CONTEXT_TOKENS = parseInt(process.env.MEMORY_MAX_CONTEXT_TOKENS
 // Instance name for logging
 const INSTANCE_NAME = process.env.INSTANCE_NAME || "unnamed-instance";
 
+// Generate a consistent color code for the instance name (ANSI 256 colors)
+function getInstanceColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  // Use colors 17-230 (avoiding too dark/light colors)
+  return 17 + (Math.abs(hash) % 214);
+}
+
+const INSTANCE_COLOR = getInstanceColor(INSTANCE_NAME);
+// ANSI escape: \x1b[48;5;{color}m for background, \x1b[38;5;{color}m for foreground
+const INSTANCE_BADGE = `\x1b[48;5;${INSTANCE_COLOR}m\x1b[38;5;15m ${INSTANCE_NAME} \x1b[0m`;
+
 // Logger setup
 const logger = createLogger({
   level: process.env.LOG_LEVEL || "info",
@@ -63,7 +77,7 @@ const logger = createLogger({
           const metaStr = Object.keys(meta).length
             ? ` ${JSON.stringify(meta)}`
             : "";
-          return `${timestamp} [${INSTANCE_NAME}] [${level}]: ${message}${metaStr}`;
+          return `${timestamp} ${INSTANCE_BADGE} [${level}]: ${message}${metaStr}`;
         }),
       ),
     }),
