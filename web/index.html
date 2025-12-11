@@ -509,16 +509,30 @@
     }
 
     .message-content.user code {
-      background: rgba(255, 255, 255, 0.2);
-      color: #ffffff;
+      background: rgba(0, 0, 0, 0.4);
+      color: #ffdd88;
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
     }
 
     .message-content.user pre {
-      background: rgba(0, 0, 0, 0.3);
+      background: #1e1e1e;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .message-content.user pre code {
       background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    .message-content.user strong {
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .message-content.user em {
+      color: #cce5ff;
     }
 
     :root.light .message-content.user {
