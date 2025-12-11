@@ -766,12 +766,6 @@
       transform: translateX(12px);
     }
 
-    .send-controls .context-toggle input {
-      position: absolute;
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
 
     .loading {
       display: flex;
@@ -1052,11 +1046,11 @@
             <button class="btn btn-primary send-btn" id="send-btn" onclick="sendQuestion()" disabled>
               Send
             </button>
-            <label class="context-toggle" title="When enabled, the instance remembers previous messages in this conversation">
-              <input type="checkbox" id="context-toggle" onchange="toggleContextMode(this.checked)">
+            <div class="context-toggle" id="context-toggle-container" onclick="handleContextToggleClick()" title="When enabled, the instance remembers previous messages in this conversation">
+              <input type="checkbox" id="context-toggle">
               <span class="context-toggle-switch"></span>
               <span class="context-toggle-label">Context</span>
-            </label>
+            </div>
           </div>
         </div>
       </div>
@@ -1548,6 +1542,13 @@
           showToast('Conversation cleared', 'success');
         }
       }
+    }
+
+    // Handle context toggle click
+    function handleContextToggleClick() {
+      const checkbox = document.getElementById('context-toggle');
+      checkbox.checked = !checkbox.checked;
+      toggleContextMode(checkbox.checked);
     }
 
     // Toggle context mode for current instance
