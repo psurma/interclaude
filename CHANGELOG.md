@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.47] - 2024-12-11
+
+### Added
+
+- Conversation memory system for persistent Q&A storage per instance
+- Memory stores conversations as markdown files with frontmatter metadata
+- Keyword extraction and topic classification for indexing
+- Automatic context retrieval from past conversations
+- Memory endpoints: GET /memory/stats, /memory/search?q=, /memory/recent, /memory/conversation/:id
+- Environment variables: MEMORY_ENABLED, MEMORY_STORAGE_PATH, MEMORY_MAX_CONTEXT_ITEMS, MEMORY_MAX_CONTEXT_TOKENS
+- /ask request supports `use_memory` and `save_to_memory` options
+- /ask response includes `memory_context_used` and `memory_sources` fields
+- /health endpoint now includes memory_enabled and memory_stats
+
 ## [0.0.46] - 2024-12-11
 
 ### Changed

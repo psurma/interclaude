@@ -146,6 +146,6 @@ export async function checkClaudeAvailability() {
 export function getInstanceInfo() {
   return {
     instanceName: INSTANCE_NAME,
-    persona: SYSTEM_PROMPT ? SYSTEM_PROMPT.substring(0, 100) + (SYSTEM_PROMPT.length > 100 ? '...' : '') : ''
+    persona: SYSTEM_PROMPT || ''
   };
 }

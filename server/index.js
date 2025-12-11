@@ -9,6 +9,16 @@ import {
   checkClaudeAvailability,
   getInstanceInfo,
 } from "./claude-handler.js";
+import {
+  initializeMemory,
+  isMemoryEnabled,
+  getMemoryStats,
+  recordConversation,
+  getRelevantContext,
+  search as searchMemory,
+  getRecent as getRecentMemory,
+  getConversation,
+} from "./memory/index.js";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -31,6 +41,12 @@ try {
 const PORT = parseInt(process.env.PORT || "3001", 10);
 const HOST = process.env.HOST || "0.0.0.0";
 const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT_REQUESTS || "2", 10);
+
+// Memory configuration
+const MEMORY_ENABLED = process.env.MEMORY_ENABLED === "true";
+const MEMORY_STORAGE_PATH = process.env.MEMORY_STORAGE_PATH || "./memory";
+const MEMORY_MAX_CONTEXT_ITEMS = parseInt(process.env.MEMORY_MAX_CONTEXT_ITEMS || "3", 10);
+const MEMORY_MAX_CONTEXT_TOKENS = parseInt(process.env.MEMORY_MAX_CONTEXT_TOKENS || "2000", 10);
 
 // Logger setup
 const logger = createLogger({
@@ -104,6 +120,7 @@ app.use((req, res, next) => {
 app.get("/health", async (req, res) => {
   const claudeAvailable = await checkClaudeAvailability();
   const instanceInfo = getInstanceInfo();
+  const memoryStats = await getMemoryStats();
 
   res.json({
     status: "healthy",
@@ -113,12 +130,14 @@ app.get("/health", async (req, res) => {
     persona: instanceInfo.persona,
     active_requests: activeRequests,
     max_concurrent: MAX_CONCURRENT,
+    memory_enabled: isMemoryEnabled(),
+    memory_stats: memoryStats,
   });
 });
 
 // Ask endpoint
 app.post("/ask", authenticate, async (req, res) => {
-  const { question, context, session_id } = req.body;
+  const { question, context, session_id, use_memory = true, save_to_memory = true } = req.body;
 
   // Validation
   if (!question || typeof question !== "string" || question.trim() === "") {
@@ -133,16 +152,60 @@ app.post("/ask", authenticate, async (req, res) => {
     question: question.substring(0, 500) + (question.length > 500 ? '...' : ''),
     hasContext: !!context,
     hasSession: !!session_id,
+    useMemory: use_memory,
   });
 
   try {
+    // Get relevant context from memory if enabled
+    let memoryContext = null;
+    let memorySources = [];
+    if (isMemoryEnabled() && use_memory) {
+      memoryContext = await getRelevantContext(question, {
+        maxItems: MEMORY_MAX_CONTEXT_ITEMS,
+        maxTokens: MEMORY_MAX_CONTEXT_TOKENS,
+      });
+      if (memoryContext.contextUsed) {
+        memorySources = memoryContext.sources || [];
+        logger.info("Memory context retrieved", {
+          sources: memorySources.length,
+          summary: memoryContext.summary,
+        });
+      }
+    }
+
+    // Combine memory context with provided context
+    let fullContext = context || "";
+    if (memoryContext?.contextUsed && memoryContext.context) {
+      fullContext = memoryContext.context + "\n\n" + fullContext;
+    }
+
     const result = await executeWithConcurrencyLimit(() =>
-      invokeClaudeCode(question, context, session_id),
+      invokeClaudeCode(question, fullContext || undefined, session_id),
     );
+
+    // Record conversation to memory if enabled
+    let memoryRecorded = false;
+    if (isMemoryEnabled() && save_to_memory) {
+      const recordResult = await recordConversation(
+        question,
+        result.response,
+        result.sessionId,
+        { duration: result.duration }
+      );
+      memoryRecorded = recordResult.recorded;
+      if (memoryRecorded) {
+        logger.info("Conversation recorded to memory", {
+          conversationId: recordResult.conversationId,
+          keywords: recordResult.keywords?.slice(0, 5),
+        });
+      }
+    }
 
     logger.info("Question answered successfully", {
       duration: result.duration,
       sessionId: result.sessionId,
+      memoryUsed: memoryContext?.contextUsed || false,
+      memoryRecorded,
       answer: result.response.substring(0, 500) + (result.response.length > 500 ? '...' : ''),
     });
 
@@ -153,6 +216,8 @@ app.post("/ask", authenticate, async (req, res) => {
       instance_name: result.instanceName,
       timestamp: new Date().toISOString(),
       duration_ms: result.duration,
+      memory_context_used: memoryContext?.contextUsed || false,
+      memory_sources: memorySources,
     });
   } catch (error) {
     logger.error("Error processing question", {
@@ -173,6 +238,103 @@ app.post("/ask", authenticate, async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   }
+});
+
+// Memory stats endpoint
+app.get("/memory/stats", authenticate, async (req, res) => {
+  if (!isMemoryEnabled()) {
+    return res.status(404).json({
+      success: false,
+      error: "Memory system is not enabled",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  const stats = await getMemoryStats();
+  res.json({
+    success: true,
+    ...stats,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Memory search endpoint
+app.get("/memory/search", authenticate, async (req, res) => {
+  if (!isMemoryEnabled()) {
+    return res.status(404).json({
+      success: false,
+      error: "Memory system is not enabled",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  const query = req.query.q;
+  const limit = parseInt(req.query.limit || "10", 10);
+
+  if (!query) {
+    return res.status(400).json({
+      success: false,
+      error: "Missing query parameter 'q'",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  const results = await searchMemory(query, limit);
+  res.json({
+    success: true,
+    query,
+    results,
+    count: results.length,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Memory recent endpoint
+app.get("/memory/recent", authenticate, async (req, res) => {
+  if (!isMemoryEnabled()) {
+    return res.status(404).json({
+      success: false,
+      error: "Memory system is not enabled",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  const limit = parseInt(req.query.limit || "10", 10);
+  const recent = await getRecentMemory(limit);
+
+  res.json({
+    success: true,
+    conversations: recent,
+    count: recent.length,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Get specific conversation
+app.get("/memory/conversation/:id", authenticate, async (req, res) => {
+  if (!isMemoryEnabled()) {
+    return res.status(404).json({
+      success: false,
+      error: "Memory system is not enabled",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  const conversation = await getConversation(req.params.id);
+
+  if (!conversation) {
+    return res.status(404).json({
+      success: false,
+      error: "Conversation not found",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  res.json({
+    success: true,
+    conversation,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Error handling middleware
@@ -211,26 +373,47 @@ function getLocalIPs() {
 }
 
 // Start server
-app.listen(PORT, HOST, () => {
+async function startServer() {
   const instanceInfo = getInstanceInfo();
-  const localIPs = getLocalIPs();
 
-  logger.info(`InterClaude v${version} started`, {
-    host: HOST,
-    port: PORT,
-    instanceName: instanceInfo.instanceName,
-    hasPersona: !!instanceInfo.persona,
-    maxConcurrent: MAX_CONCURRENT,
-  });
-
-  logger.info(`Local: http://localhost:${PORT}`);
-
-  if (localIPs.length > 0) {
-    logger.info(`Network interfaces:`);
-    for (const ip of localIPs) {
-      logger.info(`  ${ip.interface}: http://${ip.address}:${PORT}`);
-    }
+  // Initialize memory system if enabled
+  if (MEMORY_ENABLED) {
+    await initializeMemory(instanceInfo.instanceName, MEMORY_STORAGE_PATH, {
+      enabled: true,
+      maxContextItems: MEMORY_MAX_CONTEXT_ITEMS,
+      maxContextTokens: MEMORY_MAX_CONTEXT_TOKENS,
+    });
   }
 
-  logger.info(`Health: GET /health | Ask: POST /ask`);
+  app.listen(PORT, HOST, () => {
+    const localIPs = getLocalIPs();
+
+    logger.info(`InterClaude v${version} started`, {
+      host: HOST,
+      port: PORT,
+      instanceName: instanceInfo.instanceName,
+      hasPersona: !!instanceInfo.persona,
+      maxConcurrent: MAX_CONCURRENT,
+      memoryEnabled: MEMORY_ENABLED,
+    });
+
+    logger.info(`Local: http://localhost:${PORT}`);
+
+    if (localIPs.length > 0) {
+      logger.info(`Network interfaces:`);
+      for (const ip of localIPs) {
+        logger.info(`  ${ip.interface}: http://${ip.address}:${PORT}`);
+      }
+    }
+
+    logger.info(`Health: GET /health | Ask: POST /ask`);
+    if (MEMORY_ENABLED) {
+      logger.info(`Memory: GET /memory/stats | /memory/search?q= | /memory/recent`);
+    }
+  });
+}
+
+startServer().catch((err) => {
+  logger.error("Failed to start server", { error: err.message });
+  process.exit(1);
 });

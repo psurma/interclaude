@@ -25,6 +25,9 @@ Thumbs.db
 dist/
 build/
 
+# Memory data (user conversations) - only root level
+/memory/
+
 
 #Ignore vscode AI rules
 .github/instructions/codacy.instructions.md
