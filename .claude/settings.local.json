@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash:*)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"9f3dZe5KbYqbpZSx4gwjyOAPhBen9GkyanSeW_cc\" curl -s \"https://api.cloudflare.com/client/v4/graphql\" -H \"Authorization: Bearer $CLOUDFLARE_API_TOKEN\" -H \"Content-Type: application/json\" -d '{\"\"\"\"query\"\"\"\": \"\"\"\"{ __type(name: \\\"\"\"\"AccountGatewayL7RequestsAdaptiveGroupsDimensions\\\"\"\"\") { fields { name } } }\"\"\"\"}')",
+      "Bash(export CLOUDFLARE_API_TOKEN=\"9f3dZe5KbYqbpZSx4gwjyOAPhBen9GkyanSeW_cc\")",
+      "Bash(curl:*)",
+      "Bash(jq:*)"
+    ]
+  }
+}

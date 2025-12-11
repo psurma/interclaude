@@ -48,6 +48,9 @@ const MEMORY_STORAGE_PATH = process.env.MEMORY_STORAGE_PATH || "./memory";
 const MEMORY_MAX_CONTEXT_ITEMS = parseInt(process.env.MEMORY_MAX_CONTEXT_ITEMS || "3", 10);
 const MEMORY_MAX_CONTEXT_TOKENS = parseInt(process.env.MEMORY_MAX_CONTEXT_TOKENS || "2000", 10);
 
+// Instance name for logging
+const INSTANCE_NAME = process.env.INSTANCE_NAME || "unnamed-instance";
+
 // Logger setup
 const logger = createLogger({
   level: process.env.LOG_LEVEL || "info",
@@ -60,7 +63,7 @@ const logger = createLogger({
           const metaStr = Object.keys(meta).length
             ? ` ${JSON.stringify(meta)}`
             : "";
-          return `${timestamp} [${level}]: ${message}${metaStr}`;
+          return `${timestamp} [${INSTANCE_NAME}] [${level}]: ${message}${metaStr}`;
         }),
       ),
     }),
