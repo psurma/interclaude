@@ -77,7 +77,9 @@ const logger = createLogger({
           const metaStr = Object.keys(meta).length
             ? ` ${JSON.stringify(meta)}`
             : "";
-          return `${timestamp} ${INSTANCE_BADGE} [${level}]: ${message}${metaStr}`;
+          // Gray timestamp using ANSI dim/gray color (90)
+          const grayTimestamp = `\x1b[90m${timestamp}\x1b[0m`;
+          return `${grayTimestamp} ${INSTANCE_BADGE} [${level}]: ${message}${metaStr}`;
         }),
       ),
     }),
@@ -389,6 +391,35 @@ function getLocalIPs() {
   return ips;
 }
 
+// Print prominent startup banner
+function printStartupBanner() {
+  const cyan = "\x1b[36m";
+  const bold = "\x1b[1m";
+  const reset = "\x1b[0m";
+
+  // Build version line with proper padding (58 chars between ║ markers)
+  const versionText = `C L A U D E  v${version}`;
+  const padding = 58 - versionText.length;
+  const leftPad = Math.floor(padding / 2);
+  const rightPad = padding - leftPad;
+  const versionLine = " ".repeat(leftPad) + versionText + " ".repeat(rightPad);
+
+  const banner = `
+${cyan}${bold}╔══════════════════════════════════════════════════════════╗
+║                                                          ║
+║   ██╗███╗   ██╗████████╗███████╗██████╗                  ║
+║   ██║████╗  ██║╚══██╔══╝██╔════╝██╔══██╗                 ║
+║   ██║██╔██╗ ██║   ██║   █████╗  ██████╔╝                 ║
+║   ██║██║╚██╗██║   ██║   ██╔══╝  ██╔══██╗                 ║
+║   ██║██║ ╚████║   ██║   ███████╗██║  ██║                 ║
+║   ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝                 ║
+║${reset}${bold}${versionLine}${cyan}║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝${reset}
+`;
+  console.log(banner);
+}
+
 // Start server
 async function startServer() {
   const instanceInfo = getInstanceInfo();
@@ -405,7 +436,10 @@ async function startServer() {
   app.listen(PORT, HOST, () => {
     const localIPs = getLocalIPs();
 
-    logger.info(`InterClaude v${version} started`, {
+    // Print prominent startup banner
+    printStartupBanner();
+
+    logger.info(`Server ready`, {
       host: HOST,
       port: PORT,
       instanceName: instanceInfo.instanceName,
