@@ -504,6 +504,23 @@
       color: #ffffff;
     }
 
+    .message-content.user a {
+      color: #a0d8ff;
+    }
+
+    .message-content.user code {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    .message-content.user pre {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .message-content.user pre code {
+      background: transparent;
+    }
+
     :root.light .message-content.user {
       background: #0066cc;
       color: #ffffff;
@@ -1402,13 +1419,17 @@
       const durationStr = duration ? ` (${formatDuration(duration)})` : '';
 
       if (type === 'user') {
+        const rendered = marked.parse(content);
+        const relativeTime = formatRelativeTime(timestamp);
         messageDiv.innerHTML = `
           <div class="message-header">
             <span class="message-sender user">You</span>
-            <span class="message-time">${time}</span>
+            <span class="message-time">${time} - <span class="message-relative-time" data-timestamp="${timestamp}">${relativeTime}</span></span>
           </div>
-          <div class="message-content user">${escapeHtml(content).replace(/\n/g, '<br>')}</div>
+          <div class="message-content user">${rendered}</div>
         `;
+        // Store raw content for reference
+        messageDiv.querySelector('.message-content').dataset.raw = content;
       } else if (type === 'assistant') {
         const rendered = marked.parse(content);
         const isLong = content.length > 300 || content.split('\n').length > 5;
