@@ -1370,7 +1370,7 @@
     }
 
     // Add message to chat
-    function addMessage(type, content, sender = null, duration = null, save = true, retryQuestion = null) {
+    function addMessage(type, content, sender = null, duration = null, save = true, retryQuestion = null, savedTimestamp = null) {
       const messages = document.getElementById('messages');
 
       // Remove empty state if present
@@ -1397,9 +1397,9 @@
       const messageDiv = document.createElement('div');
       messageDiv.className = `message ${type === 'user' ? 'user-message' : type === 'assistant' ? 'assistant-message' : 'error-message'}`;
 
-      const time = new Date().toLocaleTimeString();
-      const timestamp = new Date().toISOString();
-      const durationStr = duration ? ` (${duration}ms)` : '';
+      const timestamp = savedTimestamp || new Date().toISOString();
+      const time = new Date(timestamp).toLocaleTimeString();
+      const durationStr = duration ? ` (${formatDuration(duration)})` : '';
 
       if (type === 'user') {
         messageDiv.innerHTML = `
@@ -1412,10 +1412,11 @@
       } else if (type === 'assistant') {
         const rendered = marked.parse(content);
         const isLong = content.length > 300 || content.split('\n').length > 5;
+        const relativeTime = formatRelativeTime(timestamp);
         messageDiv.innerHTML = `
           <div class="message-header">
             <span class="message-sender assistant">${sender || 'Assistant'}</span>
-            <span class="message-time">${time}${durationStr}</span>
+            <span class="message-time">${time}${durationStr} - <span class="message-relative-time" data-timestamp="${timestamp}">${relativeTime}</span></span>
           </div>
           <div class="message-content-wrapper">
             ${isLong ? `
@@ -1503,7 +1504,7 @@
 
       messages.innerHTML = '';
       for (const msg of conv) {
-        addMessage(msg.type, msg.content, msg.sender, msg.duration, false);
+        addMessage(msg.type, msg.content, msg.sender, msg.duration, false, null, msg.time);
       }
     }
 
@@ -1743,6 +1744,38 @@
       const mins = Math.round((ms % 3600000) / 60000);
       return `${hours}h ${mins}m`;
     }
+
+    // Format relative time (e.g., "5 minutes ago")
+    function formatRelativeTime(isoTimestamp) {
+      const now = Date.now();
+      const then = new Date(isoTimestamp).getTime();
+      const diff = now - then;
+
+      if (diff < 60000) return 'just now';
+      if (diff < 3600000) {
+        const mins = Math.floor(diff / 60000);
+        return `${mins} minute${mins !== 1 ? 's' : ''} ago`;
+      }
+      if (diff < 86400000) {
+        const hours = Math.floor(diff / 3600000);
+        return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+      }
+      const days = Math.floor(diff / 86400000);
+      return `${days} day${days !== 1 ? 's' : ''} ago`;
+    }
+
+    // Update all relative times in messages
+    function updateRelativeTimes() {
+      document.querySelectorAll('.message-relative-time').forEach(el => {
+        const timestamp = el.dataset.timestamp;
+        if (timestamp) {
+          el.textContent = formatRelativeTime(timestamp);
+        }
+      });
+    }
+
+    // Update relative times every minute
+    setInterval(updateRelativeTimes, 60000);
 
     // Update stats
     function updateStats() {
