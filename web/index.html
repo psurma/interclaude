@@ -1130,10 +1130,11 @@
         const status = instanceStatus[name] || 'checking';
         const isSelected = name === selectedInstance;
         const isLoading = !!loadingInstances[name];
+        const statusLabel = isLoading ? 'loading...' : status;
         return `
-          <div class="instance-item ${isSelected ? 'selected' : ''} ${isLoading ? 'loading' : ''}" onclick="selectInstance('${name}')" title="${name} - ${status}">
+          <div class="instance-item ${isSelected ? 'selected' : ''} ${isLoading ? 'loading' : ''}" onclick="selectInstance('${name}')" title="${name} (${statusLabel})">
             <div class="name">
-              <span class="status-dot ${status} ${isLoading ? 'loading' : ''}" title="${name}"></span>
+              <span class="status-dot ${status} ${isLoading ? 'loading' : ''}" title="${name} (${statusLabel})"></span>
               <span class="instance-name">${name}</span>
               ${isLoading ? '<span class="instance-loading-badge">...</span>' : ''}
             </div>
