@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.63] - 2024-12-12
+
+### Fixed
+
+- Web UI: Retry button now persists for error messages after page reload
+- Error messages now save the original question so retry works after switching instances or refreshing
+
 ## [0.0.62] - 2024-12-12
 
 ### Changed

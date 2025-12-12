@@ -1499,13 +1499,18 @@
         if (!conversations[selectedInstance]) {
           conversations[selectedInstance] = [];
         }
-        conversations[selectedInstance].push({
+        const msgData = {
           type,
           content,
           sender,
           duration,
           time: timestamp
-        });
+        };
+        // Save retry question for error messages
+        if (type === 'error' && retryQuestion) {
+          msgData.retryQuestion = retryQuestion;
+        }
+        conversations[selectedInstance].push(msgData);
         saveConversations();
       }
     }
@@ -1527,7 +1532,7 @@
 
       messages.innerHTML = '';
       for (const msg of conv) {
-        addMessage(msg.type, msg.content, msg.sender, msg.duration, false, null, msg.time);
+        addMessage(msg.type, msg.content, msg.sender, msg.duration, false, msg.retryQuestion || null, msg.time);
       }
     }
 
