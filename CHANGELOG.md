@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.59] - 2024-12-12
+
+### Added
+
+- Package Context Loader: Automatically detects monorepo packages and loads relevant CLAUDE.md files
+- Questions mentioning package names (e.g., "announcements", "messages") automatically inject that package's documentation
+- Discovers packages in common monorepo structures: `packages/`, `apps/`, `libs/`, `services/`, `modules/`
+- New `GET /packages` endpoint lists all discovered packages and their documentation status
+- `/health` endpoint now shows `package_context_enabled`, `packages_discovered`, and `packages_with_docs`
+- `/ask` response includes `package_context_used` and `packages_detected` fields
+- New request option `use_package_context` (default: true) to control package context injection
+- Environment variable `PACKAGE_CONTEXT_ENABLED` (default: true) to enable/disable feature
+- Startup log shows count of discovered packages and how many have CLAUDE.md files
+
+## [0.0.58] - 2024-12-11
+
+### Fixed
+
+- Web UI: Retry button now appears for all failed requests (previously only showed for network errors)
+
+## [0.0.57] - 2024-12-11
+
+### Added
+
+- Web UI: Instance details panel now shows memory status (Enabled/Disabled)
+
 ## [0.0.56] - 2024-12-11
 
 ### Changed

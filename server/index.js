@@ -19,6 +19,11 @@ import {
   getRecent as getRecentMemory,
   getConversation,
 } from "./memory/index.js";
+import {
+  buildPackageContext,
+  discoverPackages,
+  getPackageContextSummary,
+} from "./package-context.js";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -47,6 +52,9 @@ const MEMORY_ENABLED = process.env.MEMORY_ENABLED === "true";
 const MEMORY_STORAGE_PATH = process.env.MEMORY_STORAGE_PATH || "./memory";
 const MEMORY_MAX_CONTEXT_ITEMS = parseInt(process.env.MEMORY_MAX_CONTEXT_ITEMS || "3", 10);
 const MEMORY_MAX_CONTEXT_TOKENS = parseInt(process.env.MEMORY_MAX_CONTEXT_TOKENS || "2000", 10);
+
+// Package context configuration
+const PACKAGE_CONTEXT_ENABLED = process.env.PACKAGE_CONTEXT_ENABLED !== "false"; // Enabled by default
 
 // Instance name for logging
 const INSTANCE_NAME = process.env.INSTANCE_NAME || "unnamed-instance";
@@ -141,6 +149,10 @@ app.get("/health", async (req, res) => {
   const instanceInfo = getInstanceInfo();
   const memoryStats = await getMemoryStats();
 
+  // Get package info
+  const packages = PACKAGE_CONTEXT_ENABLED ? discoverPackages() : [];
+  const packagesWithDocs = packages.filter(p => p.hasClaudeMd).length;
+
   res.json({
     status: "healthy",
     version,
@@ -151,12 +163,15 @@ app.get("/health", async (req, res) => {
     max_concurrent: MAX_CONCURRENT,
     memory_enabled: isMemoryEnabled(),
     memory_stats: memoryStats,
+    package_context_enabled: PACKAGE_CONTEXT_ENABLED,
+    packages_discovered: packages.length,
+    packages_with_docs: packagesWithDocs,
   });
 });
 
 // Ask endpoint
 app.post("/ask", authenticate, async (req, res) => {
-  const { question, context, session_id, use_memory = true, save_to_memory = true } = req.body;
+  const { question, context, session_id, use_memory = true, save_to_memory = true, use_package_context = true } = req.body;
 
   // Validation
   if (!question || typeof question !== "string" || question.trim() === "") {
@@ -172,9 +187,24 @@ app.post("/ask", authenticate, async (req, res) => {
     hasContext: !!context,
     hasSession: !!session_id,
     useMemory: use_memory,
+    usePackageContext: use_package_context,
   });
 
   try {
+    // Get package context if enabled
+    let packageContext = null;
+    let detectedPackages = [];
+    if (PACKAGE_CONTEXT_ENABLED && use_package_context) {
+      packageContext = buildPackageContext(question);
+      detectedPackages = packageContext.packages;
+      if (detectedPackages.length > 0) {
+        logger.info("Package context detected", {
+          packages: detectedPackages,
+          totalPackages: packageContext.totalPackages,
+        });
+      }
+    }
+
     // Get relevant context from memory if enabled
     let memoryContext = null;
     let memorySources = [];
@@ -192,11 +222,18 @@ app.post("/ask", authenticate, async (req, res) => {
       }
     }
 
-    // Combine memory context with provided context
-    let fullContext = context || "";
-    if (memoryContext?.contextUsed && memoryContext.context) {
-      fullContext = memoryContext.context + "\n\n" + fullContext;
+    // Combine all context: package context + memory context + provided context
+    let fullContext = "";
+    if (packageContext?.context) {
+      fullContext += packageContext.context + "\n\n";
     }
+    if (memoryContext?.contextUsed && memoryContext.context) {
+      fullContext += memoryContext.context + "\n\n";
+    }
+    if (context) {
+      fullContext += context;
+    }
+    fullContext = fullContext.trim();
 
     const result = await executeWithConcurrencyLimit(() =>
       invokeClaudeCode(question, fullContext || undefined, session_id),
@@ -225,6 +262,7 @@ app.post("/ask", authenticate, async (req, res) => {
       sessionId: result.sessionId,
       memoryUsed: memoryContext?.contextUsed || false,
       memoryRecorded,
+      packagesUsed: detectedPackages.length,
       answer: result.response.substring(0, 500) + (result.response.length > 500 ? '...' : ''),
     });
 
@@ -237,6 +275,8 @@ app.post("/ask", authenticate, async (req, res) => {
       duration_ms: result.duration,
       memory_context_used: memoryContext?.contextUsed || false,
       memory_sources: memorySources,
+      package_context_used: detectedPackages.length > 0,
+      packages_detected: detectedPackages,
     });
   } catch (error) {
     logger.error("Error processing question", {
@@ -257,6 +297,30 @@ app.post("/ask", authenticate, async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   }
+});
+
+// Packages endpoint - list discovered packages
+app.get("/packages", authenticate, async (req, res) => {
+  if (!PACKAGE_CONTEXT_ENABLED) {
+    return res.status(404).json({
+      success: false,
+      error: "Package context is not enabled",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  const packages = discoverPackages();
+  res.json({
+    success: true,
+    packages: packages.map(p => ({
+      name: p.name,
+      path: p.path,
+      has_documentation: p.hasClaudeMd,
+    })),
+    total: packages.length,
+    with_documentation: packages.filter(p => p.hasClaudeMd).length,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Memory stats endpoint
@@ -460,6 +524,10 @@ async function startServer() {
     logger.info(`Health: GET /health | Ask: POST /ask`);
     if (MEMORY_ENABLED) {
       logger.info(`Memory: GET /memory/stats | /memory/search?q= | /memory/recent`);
+    }
+    if (PACKAGE_CONTEXT_ENABLED) {
+      const pkgs = discoverPackages();
+      logger.info(`Package Context: ${pkgs.length} packages discovered, ${pkgs.filter(p => p.hasClaudeMd).length} with CLAUDE.md`);
     }
   });
 }
