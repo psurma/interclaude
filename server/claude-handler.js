@@ -1,13 +1,13 @@
-import { spawn } from 'child_process';
-import { v4 as uuidv4 } from 'uuid';
+import { spawn } from "child_process";
+import { v4 as uuidv4 } from "uuid";
 
-const TIMEOUT_MS = parseInt(process.env.CLAUDE_CODE_TIMEOUT || '60000', 10);
-const CLAUDE_PATH = process.env.CLAUDE_CODE_PATH || 'claude';
-const ALLOWED_TOOLS = process.env.CLAUDE_CODE_ALLOWED_TOOLS || '';
-const SYSTEM_PROMPT = process.env.CLAUDE_SYSTEM_PROMPT || '';
-const INSTANCE_NAME = process.env.INSTANCE_NAME || 'unnamed-instance';
-const CLAUDE_MODEL = process.env.CLAUDE_MODEL || '';
-const WORKING_DIR = process.env.CLAUDE_WORKING_DIR || '/tmp';
+const TIMEOUT_MS = parseInt(process.env.CLAUDE_CODE_TIMEOUT || "60000", 10);
+const CLAUDE_PATH = process.env.CLAUDE_CODE_PATH || "claude";
+const ALLOWED_TOOLS = process.env.CLAUDE_CODE_ALLOWED_TOOLS || "";
+const SYSTEM_PROMPT = process.env.CLAUDE_SYSTEM_PROMPT || "";
+const INSTANCE_NAME = process.env.INSTANCE_NAME || "unnamed-instance";
+const CLAUDE_MODEL = process.env.CLAUDE_MODEL || "";
+const WORKING_DIR = process.env.CLAUDE_WORKING_DIR || "/tmp";
 
 /**
  * Invoke Claude Code in headless mode with the given question
@@ -21,7 +21,7 @@ export async function invokeClaudeCode(question, context, sessionId) {
   const startTime = Date.now();
 
   // Build the prompt with optional system prompt and context
-  let prompt = '';
+  let prompt = "";
 
   if (SYSTEM_PROMPT) {
     prompt += `System: ${SYSTEM_PROMPT}\n\n`;
@@ -37,56 +37,58 @@ export async function invokeClaudeCode(question, context, sessionId) {
   const args = [];
 
   if (sessionId) {
-    args.push('--resume', sessionId);
+    args.push("--resume", sessionId);
   }
 
-  args.push('--print', prompt, '--output-format', 'json', '--dangerously-skip-permissions');
+  args.push("--print", prompt, "--output-format", "json", "--dangerously-skip-permissions");
 
   if (CLAUDE_MODEL) {
-    args.push('--model', CLAUDE_MODEL);
+    args.push("--model", CLAUDE_MODEL);
   }
 
   if (ALLOWED_TOOLS) {
-    args.push('--allowedTools', ALLOWED_TOOLS);
+    args.push("--allowedTools", ALLOWED_TOOLS);
   }
 
   return new Promise((resolve, reject) => {
-    let stdout = '';
-    let stderr = '';
+    let stdout = "";
+    let stderr = "";
 
     const child = spawn(CLAUDE_PATH, args, {
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ["pipe", "pipe", "pipe"],
       env: { ...process.env },
-      cwd: WORKING_DIR
+      cwd: WORKING_DIR,
     });
 
     // Close stdin immediately to signal we're not sending input
     child.stdin.end();
 
     const timeoutId = setTimeout(() => {
-      child.kill('SIGTERM');
+      child.kill("SIGTERM");
       setTimeout(() => {
         if (!child.killed) {
-          child.kill('SIGKILL');
+          child.kill("SIGKILL");
         }
       }, 5000);
       reject(new Error(`Claude Code timed out after ${TIMEOUT_MS}ms`));
     }, TIMEOUT_MS);
 
-    child.stdout.on('data', (data) => {
+    child.stdout.on("data", (data) => {
       stdout += data.toString();
     });
 
-    child.stderr.on('data', (data) => {
+    child.stderr.on("data", (data) => {
       stderr += data.toString();
     });
 
-    child.on('close', (code) => {
+    child.on("close", (code) => {
       clearTimeout(timeoutId);
       const duration = Date.now() - startTime;
 
       if (code !== 0) {
-        return reject(new Error(`Claude Code exited with code ${code}: ${stderr || 'Unknown error'}`));
+        return reject(
+          new Error(`Claude Code exited with code ${code}: ${stderr || "Unknown error"}`),
+        );
       }
 
       try {
@@ -96,7 +98,7 @@ export async function invokeClaudeCode(question, context, sessionId) {
           response: result.result || result.content || result.text || stdout,
           sessionId: result.session_id || sessionId || uuidv4(),
           duration,
-          instanceName: INSTANCE_NAME
+          instanceName: INSTANCE_NAME,
         });
       } catch (parseError) {
         // Non-JSON output - return as plain text
@@ -104,12 +106,12 @@ export async function invokeClaudeCode(question, context, sessionId) {
           response: stdout.trim(),
           sessionId: sessionId || uuidv4(),
           duration,
-          instanceName: INSTANCE_NAME
+          instanceName: INSTANCE_NAME,
         });
       }
     });
 
-    child.on('error', (err) => {
+    child.on("error", (err) => {
       clearTimeout(timeoutId);
       reject(new Error(`Failed to spawn Claude Code: ${err.message}`));
     });
@@ -123,16 +125,16 @@ export async function invokeClaudeCode(question, context, sessionId) {
  */
 export async function checkClaudeAvailability() {
   return new Promise((resolve) => {
-    const child = spawn(CLAUDE_PATH, ['--version'], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      timeout: 5000
+    const child = spawn(CLAUDE_PATH, ["--version"], {
+      stdio: ["pipe", "pipe", "pipe"],
+      timeout: 5000,
     });
 
-    child.on('close', (code) => {
+    child.on("close", (code) => {
       resolve(code === 0);
     });
 
-    child.on('error', () => {
+    child.on("error", () => {
       resolve(false);
     });
   });
@@ -146,6 +148,6 @@ export async function checkClaudeAvailability() {
 export function getInstanceInfo() {
   return {
     instanceName: INSTANCE_NAME,
-    persona: SYSTEM_PROMPT || ''
+    persona: SYSTEM_PROMPT || "",
   };
 }

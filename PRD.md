@@ -1,4 +1,5 @@
 # Product Requirements Document
+
 ## Claude Code Inter-Instance Communication PoC
 
 **Version:** 1.0  
@@ -11,12 +12,15 @@
 ## 1. Overview
 
 ### 1.1 Purpose
+
 This document defines the requirements for a proof-of-concept (PoC) demonstrating bidirectional communication between two Claude Code instances running on separate machines over a network. The goal is to enable one Claude Code session to ask questions to another and receive responses automatically.
 
 ### 1.2 Background
+
 When developing applications using Claude Code across multiple codebases (SDK, frontend, backend), developers often run separate Claude Code sessions to maintain isolated context windows. Currently, sharing information between sessions requires manual copy-paste. This PoC explores automated inter-instance communication.
 
 ### 1.3 Success Criteria
+
 - Instance A can send a question to Instance B over HTTP
 - Instance B receives the question, processes it, and sends a response
 - Instance A receives and displays the response
@@ -51,12 +55,12 @@ When developing applications using Claude Code across multiple codebases (SDK, f
 
 ### 2.2 Components
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| Webhook Server | Machine B | Receives questions, invokes Claude Code headless, returns responses |
-| Request Client | Machine A | Sends questions to the webhook server |
-| Claude Code (Responder) | Machine B | Processes questions in headless mode |
-| Claude Code (Requester) | Machine A | Initiates questions and receives answers |
+| Component               | Location  | Purpose                                                             |
+| ----------------------- | --------- | ------------------------------------------------------------------- |
+| Webhook Server          | Machine B | Receives questions, invokes Claude Code headless, returns responses |
+| Request Client          | Machine A | Sends questions to the webhook server                               |
+| Claude Code (Responder) | Machine B | Processes questions in headless mode                                |
+| Claude Code (Requester) | Machine A | Initiates questions and receives answers                            |
 
 ---
 
@@ -67,6 +71,7 @@ When developing applications using Claude Code across multiple codebases (SDK, f
 **FR-1.1** The server SHALL listen for HTTP POST requests on a configurable port (default: 3001).
 
 **FR-1.2** The server SHALL accept JSON payloads with the following structure:
+
 ```json
 {
   "question": "string - the question to ask Claude Code",
@@ -76,12 +81,14 @@ When developing applications using Claude Code across multiple codebases (SDK, f
 ```
 
 **FR-1.3** Upon receiving a valid request, the server SHALL:
+
 1. Extract the question from the payload
 2. Invoke Claude Code in headless mode with the question
 3. Capture the response from Claude Code
 4. Return the response as JSON
 
 **FR-1.4** The server SHALL return responses with the following structure:
+
 ```json
 {
   "success": true,
@@ -93,6 +100,7 @@ When developing applications using Claude Code across multiple codebases (SDK, f
 ```
 
 **FR-1.5** The server SHALL handle errors gracefully and return appropriate error responses:
+
 ```json
 {
   "success": false,
@@ -106,6 +114,7 @@ When developing applications using Claude Code across multiple codebases (SDK, f
 **FR-2.1** The client SHALL be executable from the command line or from within Claude Code via bash.
 
 **FR-2.2** The client SHALL accept the following parameters:
+
 - `--host` or `-h`: Target server hostname/IP (required)
 - `--port` or `-p`: Target server port (default: 3001)
 - `--question` or `-q`: The question to send (required)
@@ -154,12 +163,12 @@ When developing applications using Claude Code across multiple codebases (SDK, f
 
 ### 5.1 Technology Stack
 
-| Component | Technology | Rationale |
-|-----------|------------|-----------|
-| Webhook Server | Node.js with Express | Lightweight, widely available, easy to deploy |
-| Request Client | Bash with curl | Available on all systems, no dependencies |
-| Data Format | JSON | Standard, easy to parse, Claude Code native support |
-| Process Management | Node child_process | Direct Claude Code CLI invocation |
+| Component          | Technology           | Rationale                                           |
+| ------------------ | -------------------- | --------------------------------------------------- |
+| Webhook Server     | Node.js with Express | Lightweight, widely available, easy to deploy       |
+| Request Client     | Bash with curl       | Available on all systems, no dependencies           |
+| Data Format        | JSON                 | Standard, easy to parse, Claude Code native support |
+| Process Management | Node child_process   | Direct Claude Code CLI invocation                   |
 
 ### 5.2 File Structure
 
@@ -196,12 +205,14 @@ claude-code-bridge/
 **Endpoint:** `POST http://{host}:{port}/ask`
 
 **Headers:**
+
 ```
 Content-Type: application/json
 X-API-Key: {api_key}
 ```
 
 **Request Body:**
+
 ```json
 {
   "question": "What is the purpose of the useEffect hook in React?",
@@ -211,6 +222,7 @@ X-API-Key: {api_key}
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -222,6 +234,7 @@ X-API-Key: {api_key}
 ```
 
 **Error Response (4xx/5xx):**
+
 ```json
 {
   "success": false,
@@ -235,6 +248,7 @@ X-API-Key: {api_key}
 **Endpoint:** `GET http://{host}:{port}/health`
 
 **Response (200):**
+
 ```json
 {
   "status": "healthy",
@@ -284,17 +298,19 @@ X-API-Key: {api_key}
 ### 7.1 Scenario 1: Simple Question
 
 **From Machine A (Instance 1):**
+
 ```bash
 ./client/ask.sh -h 192.168.1.100 -q "What is dependency injection?"
 ```
 
 **Expected Output:**
+
 ```
 ✓ Response from Instance 2:
 
-Dependency injection is a design pattern where an object receives 
-its dependencies from external sources rather than creating them 
-internally. This promotes loose coupling and makes code more 
+Dependency injection is a design pattern where an object receives
+its dependencies from external sources rather than creating them
+internally. This promotes loose coupling and makes code more
 testable and maintainable...
 
 [Session: abc123 | Duration: 1.2s]
@@ -303,6 +319,7 @@ testable and maintainable...
 ### 7.2 Scenario 2: Context-Aware Question
 
 **From Machine A (Instance 1):**
+
 ```bash
 ./client/ask.sh \
   -h 192.168.1.100 \
@@ -313,12 +330,14 @@ testable and maintainable...
 ### 7.3 Scenario 3: Follow-up Question (Session Continuity)
 
 **First question:**
+
 ```bash
 RESPONSE=$(./client/ask.sh -h 192.168.1.100 -q "Explain React hooks" --json)
 SESSION_ID=$(echo $RESPONSE | jq -r '.session_id')
 ```
 
 **Follow-up:**
+
 ```bash
 ./client/ask.sh -h 192.168.1.100 -s $SESSION_ID -q "Now explain useState specifically"
 ```
@@ -369,14 +388,14 @@ export CLAUDE_BRIDGE_API_KEY=your-secret-api-key-here
 
 ### 9.2 Integration Tests
 
-| Test Case | Description | Expected Result |
-|-----------|-------------|-----------------|
-| TC-01 | Health check | 200 OK with status |
-| TC-02 | Simple question | Valid answer returned |
-| TC-03 | Missing API key | 401 Unauthorized |
-| TC-04 | Invalid JSON | 400 Bad Request |
-| TC-05 | Timeout handling | 504 Gateway Timeout |
-| TC-06 | Session continuity | Same session_id works |
+| Test Case | Description        | Expected Result       |
+| --------- | ------------------ | --------------------- |
+| TC-01     | Health check       | 200 OK with status    |
+| TC-02     | Simple question    | Valid answer returned |
+| TC-03     | Missing API key    | 401 Unauthorized      |
+| TC-04     | Invalid JSON       | 400 Bad Request       |
+| TC-05     | Timeout handling   | 504 Gateway Timeout   |
+| TC-06     | Session continuity | Same session_id works |
 
 ### 9.3 End-to-End Test Script
 
@@ -392,7 +411,7 @@ curl -s http://$HOST:$PORT/health | jq .
 
 # Test 2: Simple question
 echo "2. Simple question..."
-./client/ask.sh -h $HOST -q "What is 2+2?" 
+./client/ask.sh -h $HOST -q "What is 2+2?"
 
 # Test 3: Context question
 echo "3. Context question..."
@@ -434,30 +453,28 @@ claude --resume $SESSION_ID -p "Follow-up question" --output-format json
 
 ```javascript
 // server/index.js
-const express = require('express');
-const { spawn } = require('child_process');
+const express = require("express");
+const { spawn } = require("child_process");
 
 const app = express();
 app.use(express.json());
 
-app.post('/ask', authenticate, async (req, res) => {
+app.post("/ask", authenticate, async (req, res) => {
   const { question, context, session_id } = req.body;
-  
-  const prompt = context 
-    ? `Context: ${context}\n\nQuestion: ${question}`
-    : question;
-  
-  const args = ['-p', prompt, '--output-format', 'json'];
-  if (session_id) args.unshift('--resume', session_id);
-  
+
+  const prompt = context ? `Context: ${context}\n\nQuestion: ${question}` : question;
+
+  const args = ["-p", prompt, "--output-format", "json"];
+  if (session_id) args.unshift("--resume", session_id);
+
   const result = await invokeClaudeCode(args);
-  
+
   res.json({
     success: true,
     answer: result.response,
     session_id: result.session_id,
     timestamp: new Date().toISOString(),
-    duration_ms: result.duration
+    duration_ms: result.duration,
   });
 });
 ```
@@ -499,15 +516,15 @@ curl -s -X POST "http://${HOST}:${PORT}/ask" \
 
 ## 12. Glossary
 
-| Term | Definition |
-|------|------------|
+| Term          | Definition                                           |
+| ------------- | ---------------------------------------------------- |
 | Headless Mode | Running Claude Code non-interactively with `-p` flag |
-| Instance | A single running Claude Code session |
-| Requester | The Claude Code instance initiating a question |
-| Responder | The Claude Code instance answering questions |
-| Session ID | Unique identifier for conversation continuity |
-| Webhook | HTTP endpoint that receives and processes requests |
+| Instance      | A single running Claude Code session                 |
+| Requester     | The Claude Code instance initiating a question       |
+| Responder     | The Claude Code instance answering questions         |
+| Session ID    | Unique identifier for conversation continuity        |
+| Webhook       | HTTP endpoint that receives and processes requests   |
 
 ---
 
-*End of Document*
+_End of Document_

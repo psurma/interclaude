@@ -62,6 +62,7 @@ curl http://localhost:3001/health
 ```
 
 Response:
+
 ```json
 {
   "status": "healthy",
@@ -83,6 +84,7 @@ curl -X POST http://localhost:3001/ask \
 ```
 
 Request body:
+
 ```json
 {
   "question": "Your question here",
@@ -92,6 +94,7 @@ Request body:
 ```
 
 Response:
+
 ```json
 {
   "success": true,

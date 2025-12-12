@@ -3,7 +3,7 @@
  * Coordinates storage, indexing, and retrieval
  */
 
-import { resolve, isAbsolute } from 'path';
+import { resolve, isAbsolute } from "path";
 import {
   ensureDirectoryStructure,
   loadIndex,
@@ -14,29 +14,26 @@ import {
   appendToConversation,
   updateIndex,
   findConversationBySessionId,
-  getStats
-} from './storage.js';
+  getStats,
+} from "./storage.js";
 
-import {
-  extractKeywordsFromExchange,
-  extractTopicsFromExchange
-} from './indexer.js';
+import { extractKeywordsFromExchange, extractTopicsFromExchange } from "./indexer.js";
 
 import {
   findRelevantConversations,
   formatContextForInjection,
   shouldRetrieveContext,
   createContextSummary,
-  searchConversations
-} from './retriever.js';
+  searchConversations,
+} from "./retriever.js";
 
 // Configuration
 let config = {
   enabled: false,
-  basePath: './memory',
-  instanceName: 'unnamed-instance',
+  basePath: "./memory",
+  instanceName: "unnamed-instance",
   maxContextItems: 3,
-  maxContextTokens: 2000
+  maxContextTokens: 2000,
 };
 
 // In-memory cache of the index
@@ -51,7 +48,7 @@ const INDEX_CACHE_TTL = 30000; // 30 seconds
  * @param {object} options - Additional options
  */
 export async function initializeMemory(instanceName, storagePath, options = {}) {
-  config.instanceName = instanceName || 'unnamed-instance';
+  config.instanceName = instanceName || "unnamed-instance";
 
   // Resolve storage path
   if (storagePath) {
@@ -63,7 +60,7 @@ export async function initializeMemory(instanceName, storagePath, options = {}) 
   config.maxContextTokens = options.maxContextTokens || 2000;
 
   if (!config.enabled) {
-    console.log('[Memory] Memory system disabled');
+    console.log("[Memory] Memory system disabled");
     return;
   }
 
@@ -79,7 +76,7 @@ export async function initializeMemory(instanceName, storagePath, options = {}) 
     console.log(`[Memory] Storage path: ${config.basePath}`);
     console.log(`[Memory] Total conversations: ${indexCache.totalConversations}`);
   } catch (error) {
-    console.error('[Memory] Failed to initialize:', error.message);
+    console.error("[Memory] Failed to initialize:", error.message);
     config.enabled = false;
   }
 }
@@ -105,12 +102,12 @@ export async function getMemoryStats() {
     const stats = await getStats(config.basePath, config.instanceName);
     return {
       enabled: true,
-      ...stats
+      ...stats,
     };
   } catch (error) {
     return {
       enabled: true,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -148,7 +145,7 @@ function invalidateIndexCache() {
  */
 export async function recordConversation(question, answer, sessionId, metadata = {}) {
   if (!config.enabled) {
-    return { recorded: false, reason: 'Memory disabled' };
+    return { recorded: false, reason: "Memory disabled" };
   }
 
   try {
@@ -159,7 +156,11 @@ export async function recordConversation(question, answer, sessionId, metadata =
     // Check if we have an existing conversation for this session
     let conversation = null;
     if (sessionId) {
-      conversation = await findConversationBySessionId(config.basePath, config.instanceName, sessionId);
+      conversation = await findConversationBySessionId(
+        config.basePath,
+        config.instanceName,
+        sessionId,
+      );
     }
 
     let relativePath;
@@ -188,10 +189,10 @@ export async function recordConversation(question, answer, sessionId, metadata =
       conversationId: conversation.id,
       isNewConversation: !sessionId || conversation.exchanges.length === 1,
       keywords,
-      topics
+      topics,
     };
   } catch (error) {
-    console.error('[Memory] Failed to record conversation:', error.message);
+    console.error("[Memory] Failed to record conversation:", error.message);
     return { recorded: false, error: error.message };
   }
 }
@@ -204,12 +205,12 @@ export async function recordConversation(question, answer, sessionId, metadata =
  */
 export async function getRelevantContext(question, options = {}) {
   if (!config.enabled) {
-    return { contextUsed: false, reason: 'Memory disabled' };
+    return { contextUsed: false, reason: "Memory disabled" };
   }
 
   // Check if we should retrieve context for this question
   if (!shouldRetrieveContext(question)) {
-    return { contextUsed: false, reason: 'Question type does not need context' };
+    return { contextUsed: false, reason: "Question type does not need context" };
   }
 
   try {
@@ -218,11 +219,11 @@ export async function getRelevantContext(question, options = {}) {
     // Find relevant conversations
     const matches = findRelevantConversations(question, index, {
       maxResults: options.maxItems || config.maxContextItems,
-      minScore: options.minScore || 0.1
+      minScore: options.minScore || 0.1,
     });
 
     if (matches.length === 0) {
-      return { contextUsed: false, reason: 'No relevant conversations found' };
+      return { contextUsed: false, reason: "No relevant conversations found" };
     }
 
     // Load full conversation data for matches
@@ -233,7 +234,7 @@ export async function getRelevantContext(question, options = {}) {
         conversationsWithData.push({
           ...match,
           exchanges: conversation.exchanges,
-          topics: conversation.topics
+          topics: conversation.topics,
         });
       }
     }
@@ -241,7 +242,7 @@ export async function getRelevantContext(question, options = {}) {
     // Format context for injection
     const contextText = formatContextForInjection(
       conversationsWithData,
-      options.maxTokens || config.maxContextTokens
+      options.maxTokens || config.maxContextTokens,
     );
 
     const summary = createContextSummary(conversationsWithData);
@@ -250,11 +251,11 @@ export async function getRelevantContext(question, options = {}) {
       contextUsed: true,
       context: contextText,
       summary,
-      sources: matches.map(m => m.id),
-      matchCount: matches.length
+      sources: matches.map((m) => m.id),
+      matchCount: matches.length,
     };
   } catch (error) {
-    console.error('[Memory] Failed to get context:', error.message);
+    console.error("[Memory] Failed to get context:", error.message);
     return { contextUsed: false, error: error.message };
   }
 }
@@ -274,7 +275,7 @@ export async function search(query, limit = 10) {
     const index = await getCachedIndex();
     return searchConversations(query, index, limit);
   } catch (error) {
-    console.error('[Memory] Search failed:', error.message);
+    console.error("[Memory] Search failed:", error.message);
     return [];
   }
 }
@@ -293,7 +294,7 @@ export async function getRecent(limit = 10) {
     const index = await getCachedIndex();
     return index.recent.slice(0, limit);
   } catch (error) {
-    console.error('[Memory] Failed to get recent:', error.message);
+    console.error("[Memory] Failed to get recent:", error.message);
     return [];
   }
 }
@@ -311,7 +312,7 @@ export async function getConversation(conversationId) {
   try {
     return await loadConversation(config.basePath, config.instanceName, conversationId);
   } catch (error) {
-    console.error('[Memory] Failed to get conversation:', error.message);
+    console.error("[Memory] Failed to get conversation:", error.message);
     return null;
   }
 }

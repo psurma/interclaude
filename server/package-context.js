@@ -1,5 +1,5 @@
-import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
-import { join, basename, dirname } from 'path';
+import { readFileSync, existsSync, readdirSync, statSync } from "fs";
+import { join, basename, dirname } from "path";
 
 /**
  * Package Context Loader
@@ -8,17 +8,17 @@ import { join, basename, dirname } from 'path';
  * their CLAUDE.md files to provide contextual information to Claude.
  */
 
-const WORKING_DIR = process.env.CLAUDE_WORKING_DIR || '/tmp';
+const WORKING_DIR = process.env.CLAUDE_WORKING_DIR || "/tmp";
 
 /**
  * Load the root CLAUDE.md file from the working directory
  * @returns {string|null} Contents of root CLAUDE.md or null
  */
 export function loadRootClaudeMd() {
-  const claudeMdPath = join(WORKING_DIR, 'CLAUDE.md');
+  const claudeMdPath = join(WORKING_DIR, "CLAUDE.md");
   if (existsSync(claudeMdPath)) {
     try {
-      return readFileSync(claudeMdPath, 'utf8');
+      return readFileSync(claudeMdPath, "utf8");
     } catch (err) {
       return null;
     }
@@ -33,7 +33,7 @@ export function loadRootClaudeMd() {
  */
 export function discoverPackages() {
   const packages = [];
-  const monorepoRoots = ['packages', 'apps', 'libs', 'services', 'modules'];
+  const monorepoRoots = ["packages", "apps", "libs", "services", "modules"];
 
   for (const root of monorepoRoots) {
     const rootPath = join(WORKING_DIR, root);
@@ -57,11 +57,11 @@ function scanPackageDirectory(dirPath, packages, prefix) {
 
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+      if (entry.name.startsWith(".") || entry.name === "node_modules") continue;
 
       const fullPath = join(dirPath, entry.name);
-      const packageJsonPath = join(fullPath, 'package.json');
-      const claudeMdPath = join(fullPath, 'CLAUDE.md');
+      const packageJsonPath = join(fullPath, "package.json");
+      const claudeMdPath = join(fullPath, "CLAUDE.md");
 
       // Check if this is a package (has package.json) or a grouping folder
       if (existsSync(packageJsonPath)) {
@@ -69,7 +69,7 @@ function scanPackageDirectory(dirPath, packages, prefix) {
           name: entry.name,
           path: `${prefix}/${entry.name}`,
           fullPath: fullPath,
-          hasClaudeMd: existsSync(claudeMdPath)
+          hasClaudeMd: existsSync(claudeMdPath),
         });
       } else {
         // Could be a grouping folder (like packages/integration/)
@@ -87,10 +87,10 @@ function scanPackageDirectory(dirPath, packages, prefix) {
  * @returns {string|null} Contents of package CLAUDE.md or null
  */
 export function loadPackageClaudeMd(packagePath) {
-  const claudeMdPath = join(WORKING_DIR, packagePath, 'CLAUDE.md');
+  const claudeMdPath = join(WORKING_DIR, packagePath, "CLAUDE.md");
   if (existsSync(claudeMdPath)) {
     try {
-      return readFileSync(claudeMdPath, 'utf8');
+      return readFileSync(claudeMdPath, "utf8");
     } catch (err) {
       return null;
     }
@@ -108,7 +108,7 @@ export function loadPackageClaudeMd(packagePath) {
 export function detectMentionedPackages(question, packages) {
   const matched = new Set();
   const questionLower = question.toLowerCase();
-  const questionWords = questionLower.split(/[\s,.\-_/]+/).filter(w => w.length > 2);
+  const questionWords = questionLower.split(/[\s,.\-_/]+/).filter((w) => w.length > 2);
 
   for (const pkg of packages) {
     const pkgNameLower = pkg.name.toLowerCase();
@@ -139,7 +139,7 @@ export function detectMentionedPackages(question, packages) {
     }
 
     // Check path segments (e.g., "sf integration" matches "integration/sf")
-    const pathSegments = pkgPathLower.split('/');
+    const pathSegments = pkgPathLower.split("/");
     for (const segment of pathSegments) {
       if (questionWords.includes(segment) && segment.length >= 3) {
         matched.add(pkg.path);
@@ -163,7 +163,7 @@ export function buildPackageContext(question) {
   // Always include root CLAUDE.md if it exists
   const rootClaudeMd = loadRootClaudeMd();
   if (rootClaudeMd) {
-    contextParts.push('# Project Overview (from root CLAUDE.md)\n\n' + rootClaudeMd);
+    contextParts.push("# Project Overview (from root CLAUDE.md)\n\n" + rootClaudeMd);
   }
 
   // Discover packages
@@ -171,9 +171,9 @@ export function buildPackageContext(question) {
 
   if (packages.length === 0) {
     return {
-      context: contextParts.join('\n\n---\n\n'),
+      context: contextParts.join("\n\n---\n\n"),
       packages: [],
-      totalPackages: 0
+      totalPackages: 0,
     };
   }
 
@@ -195,14 +195,18 @@ export function buildPackageContext(question) {
   // If no specific packages matched but we have a packages directory,
   // provide a summary of available packages
   if (matchedPackages.length === 0 && packages.length > 0) {
-    const packageList = packages.map(p => `- ${p.path}${p.hasClaudeMd ? ' (has CLAUDE.md)' : ''}`).join('\n');
-    contextParts.push(`# Available Packages\n\nThis monorepo contains ${packages.length} packages:\n\n${packageList}`);
+    const packageList = packages
+      .map((p) => `- ${p.path}${p.hasClaudeMd ? " (has CLAUDE.md)" : ""}`)
+      .join("\n");
+    contextParts.push(
+      `# Available Packages\n\nThis monorepo contains ${packages.length} packages:\n\n${packageList}`,
+    );
   }
 
   return {
-    context: contextParts.join('\n\n---\n\n'),
+    context: contextParts.join("\n\n---\n\n"),
     packages: matchedPackages,
-    totalPackages: packages.length
+    totalPackages: packages.length,
   };
 }
 
@@ -218,8 +222,8 @@ export function getPackageContextSummary(question) {
 
   return {
     totalPackages: packages.length,
-    packagesWithClaudeMd: packages.filter(p => p.hasClaudeMd).length,
+    packagesWithClaudeMd: packages.filter((p) => p.hasClaudeMd).length,
     detectedPackages: mentionedPaths,
-    hasRootClaudeMd
+    hasRootClaudeMd,
   };
 }

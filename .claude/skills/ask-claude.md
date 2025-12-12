@@ -9,10 +9,10 @@ Instances are defined in `~/.claude/interclaude-registry.json`:
 ```json
 {
   "instances": {
-    "local": {"host": "localhost", "port": 3301, "description": "Local instance"},
-    "sdk-developer": {"host": "192.168.1.10", "port": 3301, "description": "SDK expert"},
-    "frontend-dev": {"host": "192.168.1.11", "port": 3301, "description": "React/Vue specialist"},
-    "backend-dev": {"host": "192.168.1.12", "port": 3301, "description": "Node.js/API expert"}
+    "local": { "host": "localhost", "port": 3301, "description": "Local instance" },
+    "sdk-developer": { "host": "192.168.1.10", "port": 3301, "description": "SDK expert" },
+    "frontend-dev": { "host": "192.168.1.11", "port": 3301, "description": "React/Vue specialist" },
+    "backend-dev": { "host": "192.168.1.12", "port": 3301, "description": "Node.js/API expert" }
   },
   "default": "local"
 }
@@ -21,16 +21,19 @@ Instances are defined in `~/.claude/interclaude-registry.json`:
 ## Usage
 
 ### List available instances:
+
 ```bash
 /Users/pete/vibe/interclaude/client/ask-instance.sh --list
 ```
 
 ### Discover which instances are online:
+
 ```bash
 /Users/pete/vibe/interclaude/client/ask-instance.sh --discover
 ```
 
 ### Ask a named instance:
+
 ```bash
 # Ask the local instance
 /Users/pete/vibe/interclaude/client/ask-instance.sh local "What is React?"
@@ -46,6 +49,7 @@ Instances are defined in `~/.claude/interclaude-registry.json`:
 ```
 
 ### Ask with context:
+
 ```bash
 /Users/pete/vibe/interclaude/client/ask-instance.sh local "What does this do?" "const x = arr.map(i => i * 2)"
 ```
@@ -61,6 +65,7 @@ curl -s -X POST http://HOST:PORT/ask \
 ```
 
 ## Check instance health/persona:
+
 ```bash
 curl -s http://HOST:PORT/health | jq '{name: .instance_name, persona: .persona}'
 ```

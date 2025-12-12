@@ -1,6 +1,6 @@
-import { promises as fs } from 'fs';
-import { join, dirname } from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { promises as fs } from "fs";
+import { join, dirname } from "path";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Storage module for conversation memory
@@ -14,12 +14,12 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export async function ensureDirectoryStructure(basePath, instanceName) {
   const instancePath = join(basePath, instanceName);
-  const conversationsPath = join(instancePath, 'conversations');
+  const conversationsPath = join(instancePath, "conversations");
 
   await fs.mkdir(conversationsPath, { recursive: true });
 
   // Create index.md if it doesn't exist
-  const indexPath = join(instancePath, 'index.md');
+  const indexPath = join(instancePath, "index.md");
   try {
     await fs.access(indexPath);
   } catch {
@@ -40,7 +40,7 @@ function createEmptyIndex(instanceName) {
     totalConversations: 0,
     topics: {},
     keywords: {},
-    recent: []
+    recent: [],
   };
 }
 
@@ -49,7 +49,7 @@ function createEmptyIndex(instanceName) {
  */
 function getDateDirectory() {
   const now = new Date();
-  return now.toISOString().split('T')[0]; // YYYY-MM-DD
+  return now.toISOString().split("T")[0]; // YYYY-MM-DD
 }
 
 /**
@@ -65,18 +65,21 @@ export function parseMarkdownFrontmatter(content) {
     return { metadata: {}, body: content };
   }
 
-  const frontmatterLines = match[1].split('\n');
+  const frontmatterLines = match[1].split("\n");
   const metadata = {};
 
   for (const line of frontmatterLines) {
-    const colonIndex = line.indexOf(':');
+    const colonIndex = line.indexOf(":");
     if (colonIndex > 0) {
       const key = line.substring(0, colonIndex).trim();
       let value = line.substring(colonIndex + 1).trim();
 
       // Parse arrays
-      if (value.startsWith('[') && value.endsWith(']')) {
-        value = value.slice(1, -1).split(',').map(s => s.trim());
+      if (value.startsWith("[") && value.endsWith("]")) {
+        value = value
+          .slice(1, -1)
+          .split(",")
+          .map((s) => s.trim());
       }
 
       metadata[key] = value;
@@ -92,18 +95,18 @@ export function parseMarkdownFrontmatter(content) {
  * @returns {string}
  */
 function generateFrontmatter(metadata) {
-  const lines = ['---'];
+  const lines = ["---"];
 
   for (const [key, value] of Object.entries(metadata)) {
     if (Array.isArray(value)) {
-      lines.push(`${key}: [${value.join(', ')}]`);
+      lines.push(`${key}: [${value.join(", ")}]`);
     } else {
       lines.push(`${key}: ${value}`);
     }
   }
 
-  lines.push('---\n');
-  return lines.join('\n');
+  lines.push("---\n");
+  return lines.join("\n");
 }
 
 /**
@@ -120,10 +123,10 @@ export function generateConversationMarkdown(conversationData) {
     created,
     updated,
     keywords: keywords || [],
-    topics: topics || []
+    topics: topics || [],
   };
 
-  let body = '';
+  let body = "";
 
   for (let i = 0; i < exchanges.length; i++) {
     const exchange = exchanges[i];
@@ -133,7 +136,7 @@ export function generateConversationMarkdown(conversationData) {
     body += `### Answer\n\n`;
     body += `${exchange.answer}\n\n`;
     if (i < exchanges.length - 1) {
-      body += '---\n\n';
+      body += "---\n\n";
     }
   }
 
@@ -149,7 +152,8 @@ export function parseConversationMarkdown(content) {
   const { metadata, body } = parseMarkdownFrontmatter(content);
 
   // Parse exchanges from body
-  const exchangeRegex = /## Question \d+\n\*\*Timestamp:\*\* ([^\n]+)\n\n([\s\S]*?)\n\n### Answer\n\n([\s\S]*?)(?=\n---\n|$)/g;
+  const exchangeRegex =
+    /## Question \d+\n\*\*Timestamp:\*\* ([^\n]+)\n\n([\s\S]*?)\n\n### Answer\n\n([\s\S]*?)(?=\n---\n|$)/g;
   const exchanges = [];
   let match;
 
@@ -157,7 +161,7 @@ export function parseConversationMarkdown(content) {
     exchanges.push({
       timestamp: match[1],
       question: match[2].trim(),
-      answer: match[3].trim()
+      answer: match[3].trim(),
     });
   }
 
@@ -168,7 +172,7 @@ export function parseConversationMarkdown(content) {
     updated: metadata.updated,
     keywords: metadata.keywords || [],
     topics: metadata.topics || [],
-    exchanges
+    exchanges,
   };
 }
 
@@ -187,7 +191,7 @@ export async function loadConversation(basePath, instanceName, conversationId) {
     if (item.id === conversationId) {
       const fullPath = join(basePath, instanceName, item.path);
       try {
-        const content = await fs.readFile(fullPath, 'utf8');
+        const content = await fs.readFile(fullPath, "utf8");
         return parseConversationMarkdown(content);
       } catch {
         return null;
@@ -207,19 +211,19 @@ export async function loadConversation(basePath, instanceName, conversationId) {
  */
 export async function saveConversation(basePath, instanceName, conversationData) {
   const dateDir = getDateDirectory();
-  const conversationsPath = join(basePath, instanceName, 'conversations', dateDir);
+  const conversationsPath = join(basePath, instanceName, "conversations", dateDir);
 
   await fs.mkdir(conversationsPath, { recursive: true });
 
   const filename = `conv-${conversationData.id}.md`;
-  const relativePath = join('conversations', dateDir, filename);
+  const relativePath = join("conversations", dateDir, filename);
   const fullPath = join(basePath, instanceName, relativePath);
 
   const content = generateConversationMarkdown(conversationData);
 
   // Atomic write: write to temp file, then rename
-  const tempPath = fullPath + '.tmp';
-  await fs.writeFile(tempPath, content, 'utf8');
+  const tempPath = fullPath + ".tmp";
+  await fs.writeFile(tempPath, content, "utf8");
   await fs.rename(tempPath, fullPath);
 
   return relativePath;
@@ -243,11 +247,13 @@ export function createConversation(sessionId, question, answer, keywords = [], t
     updated: now,
     keywords,
     topics,
-    exchanges: [{
-      timestamp: now,
-      question,
-      answer
-    }]
+    exchanges: [
+      {
+        timestamp: now,
+        question,
+        answer,
+      },
+    ],
   };
 }
 
@@ -260,7 +266,13 @@ export function createConversation(sessionId, question, answer, keywords = [], t
  * @param {string[]} newTopics - Additional topics
  * @returns {object} Updated conversation data
  */
-export function appendToConversation(conversationData, question, answer, newKeywords = [], newTopics = []) {
+export function appendToConversation(
+  conversationData,
+  question,
+  answer,
+  newKeywords = [],
+  newTopics = [],
+) {
   const now = new Date().toISOString();
 
   // Merge keywords and topics, removing duplicates
@@ -277,9 +289,9 @@ export function appendToConversation(conversationData, question, answer, newKeyw
       {
         timestamp: now,
         question,
-        answer
-      }
-    ]
+        answer,
+      },
+    ],
   };
 }
 
@@ -290,10 +302,10 @@ export function appendToConversation(conversationData, question, answer, newKeyw
  * @returns {object} Index data
  */
 export async function loadIndex(basePath, instanceName) {
-  const indexPath = join(basePath, instanceName, 'index.md');
+  const indexPath = join(basePath, instanceName, "index.md");
 
   try {
-    const content = await fs.readFile(indexPath, 'utf8');
+    const content = await fs.readFile(indexPath, "utf8");
     return parseIndexMarkdown(content);
   } catch {
     return createEmptyIndex(instanceName);
@@ -317,7 +329,7 @@ function parseIndexMarkdown(content) {
     while ((match = topicRegex.exec(topicsMatch[1])) !== null) {
       const topicName = match[1];
       const entries = match[2].match(/\[([^\]]+)\]\(([^)]+)\)/g) || [];
-      topics[topicName] = entries.map(e => {
+      topics[topicName] = entries.map((e) => {
         const m = e.match(/\[([^\]]+)\]\(([^)]+)\)/);
         return { id: m[1], path: m[2] };
       });
@@ -328,11 +340,14 @@ function parseIndexMarkdown(content) {
   const keywords = {};
   const keywordsMatch = body.match(/## By Keyword\n\n\|[\s\S]*?\n\n/);
   if (keywordsMatch) {
-    const rows = keywordsMatch[0].split('\n').slice(3); // Skip header rows
+    const rows = keywordsMatch[0].split("\n").slice(3); // Skip header rows
     for (const row of rows) {
-      const cells = row.split('|').map(c => c.trim()).filter(c => c);
+      const cells = row
+        .split("|")
+        .map((c) => c.trim())
+        .filter((c) => c);
       if (cells.length >= 2) {
-        keywords[cells[0]] = cells[1].split(',').map(s => s.trim());
+        keywords[cells[0]] = cells[1].split(",").map((s) => s.trim());
       }
     }
   }
@@ -341,16 +356,18 @@ function parseIndexMarkdown(content) {
   const recent = [];
   const recentMatch = body.match(/## Recent Conversations\n\n([\s\S]*?)$/);
   if (recentMatch) {
-    const lines = recentMatch[1].trim().split('\n');
+    const lines = recentMatch[1].trim().split("\n");
     for (const line of lines) {
-      const match = line.match(/\d+\. \[([^\]]+)\] ([^ ]+) - ([^(]+)\(keywords: ([^)]+)\) - path: ([^\s]+)/);
+      const match = line.match(
+        /\d+\. \[([^\]]+)\] ([^ ]+) - ([^(]+)\(keywords: ([^)]+)\) - path: ([^\s]+)/,
+      );
       if (match) {
         recent.push({
           date: match[1],
           id: match[2],
           summary: match[3].trim(),
-          keywords: match[4].split(',').map(s => s.trim()),
-          path: match[5]
+          keywords: match[4].split(",").map((s) => s.trim()),
+          path: match[5],
         });
       }
     }
@@ -362,7 +379,7 @@ function parseIndexMarkdown(content) {
     totalConversations: parseInt(metadata.total_conversations) || 0,
     topics,
     keywords,
-    recent
+    recent,
   };
 }
 
@@ -373,40 +390,40 @@ function parseIndexMarkdown(content) {
  * @param {object} indexData - Index data
  */
 export async function saveIndex(basePath, instanceName, indexData) {
-  const indexPath = join(basePath, instanceName, 'index.md');
+  const indexPath = join(basePath, instanceName, "index.md");
 
   const metadata = {
     instance: indexData.instance,
     last_updated: new Date().toISOString(),
-    total_conversations: indexData.totalConversations
+    total_conversations: indexData.totalConversations,
   };
 
-  let body = '# Conversation Memory Index\n\n';
+  let body = "# Conversation Memory Index\n\n";
 
   // Topics section
-  body += '## By Topic\n\n';
+  body += "## By Topic\n\n";
   for (const [topic, entries] of Object.entries(indexData.topics)) {
     body += `### ${topic}\n`;
     for (const entry of entries) {
-      body += `- [${entry.id}](${entry.path}) - ${entry.summary || ''}\n`;
+      body += `- [${entry.id}](${entry.path}) - ${entry.summary || ""}\n`;
     }
-    body += '\n';
+    body += "\n";
   }
 
   // Keywords table
-  body += '## By Keyword\n\n';
-  body += '| Keyword | Conversations |\n';
-  body += '|---------|---------------|\n';
+  body += "## By Keyword\n\n";
+  body += "| Keyword | Conversations |\n";
+  body += "|---------|---------------|\n";
   for (const [keyword, convIds] of Object.entries(indexData.keywords)) {
-    body += `| ${keyword} | ${convIds.join(', ')} |\n`;
+    body += `| ${keyword} | ${convIds.join(", ")} |\n`;
   }
-  body += '\n';
+  body += "\n";
 
   // Recent conversations
-  body += '## Recent Conversations\n\n';
+  body += "## Recent Conversations\n\n";
   for (let i = 0; i < indexData.recent.length; i++) {
     const item = indexData.recent[i];
-    body += `${i + 1}. [${item.date}] ${item.id} - ${item.summary} (keywords: ${item.keywords.join(', ')}) - path: ${item.path}\n`;
+    body += `${i + 1}. [${item.date}] ${item.id} - ${item.summary} (keywords: ${item.keywords.join(", ")}) - path: ${item.path}\n`;
   }
 
   const content = generateFrontmatter(metadata) + body;
@@ -415,8 +432,8 @@ export async function saveIndex(basePath, instanceName, indexData) {
   await fs.mkdir(dirname(indexPath), { recursive: true });
 
   // Atomic write
-  const tempPath = indexPath + '.tmp';
-  await fs.writeFile(tempPath, content, 'utf8');
+  const tempPath = indexPath + ".tmp";
+  await fs.writeFile(tempPath, content, "utf8");
   await fs.rename(tempPath, indexPath);
 }
 
@@ -431,8 +448,8 @@ export function updateIndex(indexData, conversationData, relativePath) {
   const { id, keywords, topics, exchanges, created } = conversationData;
 
   // Get first question as summary
-  const summary = exchanges[0]?.question?.substring(0, 50) + '...' || 'No summary';
-  const date = created.split('T')[0];
+  const summary = exchanges[0]?.question?.substring(0, 50) + "..." || "No summary";
+  const date = created.split("T")[0];
 
   // Update topics
   const newTopics = { ...indexData.topics };
@@ -440,7 +457,7 @@ export function updateIndex(indexData, conversationData, relativePath) {
     if (!newTopics[topic]) {
       newTopics[topic] = [];
     }
-    const existing = newTopics[topic].find(e => e.id === id);
+    const existing = newTopics[topic].find((e) => e.id === id);
     if (!existing) {
       newTopics[topic].push({ id, path: relativePath, summary });
     }
@@ -458,13 +475,13 @@ export function updateIndex(indexData, conversationData, relativePath) {
   }
 
   // Update recent list
-  const newRecent = indexData.recent.filter(r => r.id !== id);
+  const newRecent = indexData.recent.filter((r) => r.id !== id);
   newRecent.unshift({
     date,
     id,
     summary,
     keywords,
-    path: relativePath
+    path: relativePath,
   });
 
   // Keep only last 50 recent conversations
@@ -473,7 +490,7 @@ export function updateIndex(indexData, conversationData, relativePath) {
   }
 
   // Count unique conversations
-  const uniqueIds = new Set(newRecent.map(r => r.id));
+  const uniqueIds = new Set(newRecent.map((r) => r.id));
 
   return {
     ...indexData,
@@ -481,7 +498,7 @@ export function updateIndex(indexData, conversationData, relativePath) {
     totalConversations: uniqueIds.size,
     topics: newTopics,
     keywords: newKeywords,
-    recent: newRecent
+    recent: newRecent,
   };
 }
 
@@ -518,6 +535,6 @@ export async function getStats(basePath, instanceName) {
     totalConversations: index.totalConversations,
     totalTopics: Object.keys(index.topics).length,
     totalKeywords: Object.keys(index.keywords).length,
-    lastUpdated: index.lastUpdated
+    lastUpdated: index.lastUpdated,
   };
 }

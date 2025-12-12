@@ -4,11 +4,7 @@ import "./config.js";
 import express from "express";
 import { createLogger, format, transports } from "winston";
 import { authenticate } from "./middleware/auth.js";
-import {
-  invokeClaudeCode,
-  checkClaudeAvailability,
-  getInstanceInfo,
-} from "./claude-handler.js";
+import { invokeClaudeCode, checkClaudeAvailability, getInstanceInfo } from "./claude-handler.js";
 import {
   initializeMemory,
   isMemoryEnabled,
@@ -35,9 +31,7 @@ const __dirname = dirname(__filename);
 // Get version from package.json
 let version = "0.1.0";
 try {
-  const packageJson = JSON.parse(
-    readFileSync(join(__dirname, "..", "package.json"), "utf8"),
-  );
+  const packageJson = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8"));
   version = packageJson.version;
 } catch (err) {
   // Use default version
@@ -57,7 +51,7 @@ const MEMORY_MAX_CONTEXT_TOKENS = parseInt(process.env.MEMORY_MAX_CONTEXT_TOKENS
 const PACKAGE_CONTEXT_ENABLED = process.env.PACKAGE_CONTEXT_ENABLED !== "false"; // Enabled by default
 
 // Working directory
-const WORKING_DIR = process.env.CLAUDE_WORKING_DIR || '/tmp';
+const WORKING_DIR = process.env.CLAUDE_WORKING_DIR || "/tmp";
 
 // Instance name for logging
 const INSTANCE_NAME = process.env.INSTANCE_NAME || "unnamed-instance";
@@ -85,9 +79,7 @@ const logger = createLogger({
       format: format.combine(
         format.colorize(),
         format.printf(({ level, message, timestamp, ...meta }) => {
-          const metaStr = Object.keys(meta).length
-            ? ` ${JSON.stringify(meta)}`
-            : "";
+          const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : "";
           // Gray timestamp using ANSI dim/gray color (90)
           const grayTimestamp = `\x1b[90m${timestamp}\x1b[0m`;
           return `${grayTimestamp} ${INSTANCE_BADGE} [${level}]: ${message}${metaStr}`;
@@ -154,7 +146,7 @@ app.get("/health", async (req, res) => {
 
   // Get package info
   const packages = PACKAGE_CONTEXT_ENABLED ? discoverPackages() : [];
-  const packagesWithDocs = packages.filter(p => p.hasClaudeMd).length;
+  const packagesWithDocs = packages.filter((p) => p.hasClaudeMd).length;
 
   res.json({
     status: "healthy",
@@ -174,7 +166,14 @@ app.get("/health", async (req, res) => {
 
 // Ask endpoint
 app.post("/ask", authenticate, async (req, res) => {
-  const { question, context, session_id, use_memory = true, save_to_memory = true, use_package_context = true } = req.body;
+  const {
+    question,
+    context,
+    session_id,
+    use_memory = true,
+    save_to_memory = true,
+    use_package_context = true,
+  } = req.body;
 
   // Validation
   if (!question || typeof question !== "string" || question.trim() === "") {
@@ -186,7 +185,7 @@ app.post("/ask", authenticate, async (req, res) => {
   }
 
   logger.info("Processing question", {
-    question: question.substring(0, 500) + (question.length > 500 ? '...' : ''),
+    question: question.substring(0, 500) + (question.length > 500 ? "..." : ""),
     hasContext: !!context,
     hasSession: !!session_id,
     useMemory: use_memory,
@@ -245,12 +244,9 @@ app.post("/ask", authenticate, async (req, res) => {
     // Record conversation to memory if enabled
     let memoryRecorded = false;
     if (isMemoryEnabled() && save_to_memory) {
-      const recordResult = await recordConversation(
-        question,
-        result.response,
-        result.sessionId,
-        { duration: result.duration }
-      );
+      const recordResult = await recordConversation(question, result.response, result.sessionId, {
+        duration: result.duration,
+      });
       memoryRecorded = recordResult.recorded;
       if (memoryRecorded) {
         logger.info("Conversation recorded to memory", {
@@ -266,7 +262,7 @@ app.post("/ask", authenticate, async (req, res) => {
       memoryUsed: memoryContext?.contextUsed || false,
       memoryRecorded,
       packagesUsed: detectedPackages.length,
-      answer: result.response.substring(0, 500) + (result.response.length > 500 ? '...' : ''),
+      answer: result.response.substring(0, 500) + (result.response.length > 500 ? "..." : ""),
     });
 
     res.json({
@@ -315,13 +311,13 @@ app.get("/packages", authenticate, async (req, res) => {
   const packages = discoverPackages();
   res.json({
     success: true,
-    packages: packages.map(p => ({
+    packages: packages.map((p) => ({
       name: p.name,
       path: p.path,
       has_documentation: p.hasClaudeMd,
     })),
     total: packages.length,
-    with_documentation: packages.filter(p => p.hasClaudeMd).length,
+    with_documentation: packages.filter((p) => p.hasClaudeMd).length,
     timestamp: new Date().toISOString(),
   });
 });
@@ -531,7 +527,9 @@ async function startServer() {
     }
     if (PACKAGE_CONTEXT_ENABLED) {
       const pkgs = discoverPackages();
-      logger.info(`Package Context: ${pkgs.length} packages discovered, ${pkgs.filter(p => p.hasClaudeMd).length} with CLAUDE.md`);
+      logger.info(
+        `Package Context: ${pkgs.length} packages discovered, ${pkgs.filter((p) => p.hasClaudeMd).length} with CLAUDE.md`,
+      );
     }
   });
 }

@@ -8,47 +8,47 @@
  *   node ask.js -q "Your question" [-h host] [-p port] [-c context] [-s session] [--json]
  */
 
-import { parseArgs } from 'node:util';
+import { parseArgs } from "node:util";
 
 const options = {
   host: {
-    type: 'string',
-    short: 'h',
-    default: process.env.CLAUDE_BRIDGE_HOST || 'localhost'
+    type: "string",
+    short: "h",
+    default: process.env.CLAUDE_BRIDGE_HOST || "localhost",
   },
   port: {
-    type: 'string',
-    short: 'p',
-    default: process.env.CLAUDE_BRIDGE_PORT || '3001'
+    type: "string",
+    short: "p",
+    default: process.env.CLAUDE_BRIDGE_PORT || "3001",
   },
   question: {
-    type: 'string',
-    short: 'q'
+    type: "string",
+    short: "q",
   },
   context: {
-    type: 'string',
-    short: 'c'
+    type: "string",
+    short: "c",
   },
   session: {
-    type: 'string',
-    short: 's'
+    type: "string",
+    short: "s",
   },
-  'api-key': {
-    type: 'string',
-    default: process.env.CLAUDE_BRIDGE_API_KEY || ''
+  "api-key": {
+    type: "string",
+    default: process.env.CLAUDE_BRIDGE_API_KEY || "",
   },
   json: {
-    type: 'boolean',
-    default: false
+    type: "boolean",
+    default: false,
   },
   timeout: {
-    type: 'string',
-    default: '120000'
+    type: "string",
+    default: "120000",
   },
   help: {
-    type: 'boolean',
-    default: false
-  }
+    type: "boolean",
+    default: false,
+  },
 };
 
 let values;
@@ -93,8 +93,8 @@ Examples:
 }
 
 if (!values.question) {
-  console.error('Error: Question is required (-q)');
-  console.error('Use --help for usage information');
+  console.error("Error: Question is required (-q)");
+  console.error("Use --help for usage information");
   process.exit(1);
 }
 
@@ -104,22 +104,22 @@ async function makeRequest(attempt = 1) {
   const payload = {
     question: values.question,
     ...(values.context && { context: values.context }),
-    ...(values.session && { session_id: values.session })
+    ...(values.session && { session_id: values.session }),
   };
 
   const headers = {
-    'Content-Type': 'application/json',
-    ...(values['api-key'] && { 'X-API-Key': values['api-key'] })
+    "Content-Type": "application/json",
+    ...(values["api-key"] && { "X-API-Key": values["api-key"] }),
   };
 
   const url = `http://${values.host}:${values.port}/ask`;
 
   try {
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers,
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(parseInt(values.timeout, 10))
+      signal: AbortSignal.timeout(parseInt(values.timeout, 10)),
     });
 
     const data = await response.json();
@@ -130,25 +130,26 @@ async function makeRequest(attempt = 1) {
     }
 
     if (data.success) {
-      const instanceName = data.instance_name || 'unknown';
+      const instanceName = data.instance_name || "unknown";
       console.log(`\x1b[32mResponse from ${instanceName}:\x1b[0m`);
-      console.log('----------------------------------------');
+      console.log("----------------------------------------");
       console.log(data.answer);
-      console.log('----------------------------------------');
+      console.log("----------------------------------------");
       console.log(`[Session: ${data.session_id} | Duration: ${data.duration_ms}ms]`);
     } else {
       console.error(`\x1b[31mError: ${data.error}\x1b[0m`);
       process.exit(1);
     }
   } catch (error) {
-    const isRetryable = error.name === 'TimeoutError' ||
-                        error.code === 'ECONNREFUSED' ||
-                        error.code === 'ECONNRESET';
+    const isRetryable =
+      error.name === "TimeoutError" || error.code === "ECONNREFUSED" || error.code === "ECONNRESET";
 
     if (isRetryable && attempt < MAX_RETRIES) {
       const delay = Math.pow(2, attempt) * 1000;
-      console.error(`\x1b[33mRequest failed, retrying in ${delay / 1000}s (attempt ${attempt}/${MAX_RETRIES})...\x1b[0m`);
-      await new Promise(r => setTimeout(r, delay));
+      console.error(
+        `\x1b[33mRequest failed, retrying in ${delay / 1000}s (attempt ${attempt}/${MAX_RETRIES})...\x1b[0m`,
+      );
+      await new Promise((r) => setTimeout(r, delay));
       return makeRequest(attempt + 1);
     }
 

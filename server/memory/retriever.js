@@ -7,8 +7,8 @@ import {
   extractKeywords,
   extractTopics,
   findKeywordMatches,
-  calculateKeywordSimilarity
-} from './indexer.js';
+  calculateKeywordSimilarity,
+} from "./indexer.js";
 
 /**
  * Find relevant conversations for a question
@@ -18,11 +18,7 @@ import {
  * @returns {object[]} Array of matched conversations with scores
  */
 export function findRelevantConversations(question, index, options = {}) {
-  const {
-    maxResults = 3,
-    minScore = 0.1,
-    recencyBoost = 0.1
-  } = options;
+  const { maxResults = 3, minScore = 0.1, recencyBoost = 0.1 } = options;
 
   // Extract keywords and topics from the question
   const queryKeywords = extractKeywords(question);
@@ -51,7 +47,7 @@ export function findRelevantConversations(question, index, options = {}) {
   }
 
   // Add recency boost from recent list
-  const recentIds = index.recent.map(r => r.id);
+  const recentIds = index.recent.map((r) => r.id);
   for (let i = 0; i < recentIds.length; i++) {
     const id = recentIds[i];
     if (scores[id]) {
@@ -62,7 +58,7 @@ export function findRelevantConversations(question, index, options = {}) {
 
     // Store conversation info from recent list
     if (!conversationInfo[id]) {
-      conversationInfo[id] = index.recent.find(r => r.id === id);
+      conversationInfo[id] = index.recent.find((r) => r.id === id);
     }
   }
 
@@ -74,7 +70,7 @@ export function findRelevantConversations(question, index, options = {}) {
     .map(([id, score]) => ({
       id,
       score,
-      ...conversationInfo[id]
+      ...conversationInfo[id],
     }));
 
   return ranked;
@@ -90,26 +86,28 @@ export function findRelevantConversations(question, index, options = {}) {
 export function rankByRelevance(matches, question, conversations) {
   const questionKeywords = extractKeywords(question);
 
-  return matches.map(match => {
-    const conversation = conversations.find(c => c.id === match.id);
-    if (!conversation) return match;
+  return matches
+    .map((match) => {
+      const conversation = conversations.find((c) => c.id === match.id);
+      if (!conversation) return match;
 
-    // Calculate deeper relevance based on conversation content
-    let relevanceBoost = 0;
+      // Calculate deeper relevance based on conversation content
+      let relevanceBoost = 0;
 
-    // Check if any exchange directly mentions query keywords
-    for (const exchange of conversation.exchanges) {
-      const exchangeKeywords = extractKeywords(exchange.question + ' ' + exchange.answer);
-      const similarity = calculateKeywordSimilarity(questionKeywords, exchangeKeywords);
-      relevanceBoost = Math.max(relevanceBoost, similarity);
-    }
+      // Check if any exchange directly mentions query keywords
+      for (const exchange of conversation.exchanges) {
+        const exchangeKeywords = extractKeywords(exchange.question + " " + exchange.answer);
+        const similarity = calculateKeywordSimilarity(questionKeywords, exchangeKeywords);
+        relevanceBoost = Math.max(relevanceBoost, similarity);
+      }
 
-    return {
-      ...match,
-      score: match.score + relevanceBoost * 0.5,
-      relevanceBoost
-    };
-  }).sort((a, b) => b.score - a.score);
+      return {
+        ...match,
+        score: match.score + relevanceBoost * 0.5,
+        relevanceBoost,
+      };
+    })
+    .sort((a, b) => b.score - a.score);
 }
 
 /**
@@ -119,9 +117,9 @@ export function rankByRelevance(matches, question, conversations) {
  * @returns {string} Formatted context string
  */
 export function formatContextForInjection(matches, maxTokens = 2000) {
-  if (matches.length === 0) return '';
+  if (matches.length === 0) return "";
 
-  const lines = ['--- Relevant Past Conversations ---\n'];
+  const lines = ["--- Relevant Past Conversations ---\n"];
   let estimatedTokens = 10; // Header overhead
 
   for (const match of matches) {
@@ -137,7 +135,7 @@ export function formatContextForInjection(matches, maxTokens = 2000) {
         const remainingTokens = maxTokens - estimatedTokens;
         if (remainingTokens > 50) {
           const truncatedLength = remainingTokens * 4;
-          lines.push(exchangeText.substring(0, truncatedLength) + '...\n');
+          lines.push(exchangeText.substring(0, truncatedLength) + "...\n");
         }
         break;
       }
@@ -150,8 +148,8 @@ export function formatContextForInjection(matches, maxTokens = 2000) {
     if (estimatedTokens >= maxTokens * 0.9) break;
   }
 
-  lines.push('--- End Past Conversations ---\n');
-  return lines.join('');
+  lines.push("--- End Past Conversations ---\n");
+  return lines.join("");
 }
 
 /**
@@ -169,7 +167,7 @@ export function shouldRetrieveContext(question) {
     /^(yes|no|ok|okay|sure|great)[\s!.]*$/i,
     /^what('s| is) your name/i,
     /^who are you/i,
-    /^are you (an? )?(ai|bot|claude)/i
+    /^are you (an? )?(ai|bot|claude)/i,
   ];
 
   for (const pattern of skipPatterns) {
@@ -187,33 +185,33 @@ export function shouldRetrieveContext(question) {
  * @returns {string} Brief summary of what context is being used
  */
 export function createContextSummary(matches) {
-  if (matches.length === 0) return 'No relevant past conversations found.';
+  if (matches.length === 0) return "No relevant past conversations found.";
 
   const topics = new Set();
   const keywords = new Set();
 
   for (const match of matches) {
     if (match.keywords) {
-      match.keywords.forEach(k => keywords.add(k));
+      match.keywords.forEach((k) => keywords.add(k));
     }
   }
 
   // Get topics from matches
   for (const match of matches) {
     if (match.topics) {
-      match.topics.forEach(t => topics.add(t));
+      match.topics.forEach((t) => topics.add(t));
     }
   }
 
   const parts = [];
   if (topics.size > 0) {
-    parts.push(`Topics: ${Array.from(topics).slice(0, 3).join(', ')}`);
+    parts.push(`Topics: ${Array.from(topics).slice(0, 3).join(", ")}`);
   }
   if (keywords.size > 0) {
-    parts.push(`Keywords: ${Array.from(keywords).slice(0, 5).join(', ')}`);
+    parts.push(`Keywords: ${Array.from(keywords).slice(0, 5).join(", ")}`);
   }
 
-  return `Found ${matches.length} relevant conversation(s). ${parts.join('. ')}`;
+  return `Found ${matches.length} relevant conversation(s). ${parts.join(". ")}`;
 }
 
 /**
@@ -233,7 +231,7 @@ export function searchConversations(query, index, limit = 10) {
 
   const matches = findRelevantConversations(query, index, {
     maxResults: limit,
-    minScore: 0.05 // Lower threshold for search
+    minScore: 0.05, // Lower threshold for search
   });
 
   return matches;

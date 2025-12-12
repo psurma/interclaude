@@ -12,21 +12,21 @@ export function authenticate(req, res, next) {
     return next();
   }
 
-  const apiKey = req.headers['x-api-key'];
+  const apiKey = req.headers["x-api-key"];
 
   if (!apiKey) {
     return res.status(401).json({
       success: false,
-      error: 'Missing API key. Provide X-API-Key header.',
-      timestamp: new Date().toISOString()
+      error: "Missing API key. Provide X-API-Key header.",
+      timestamp: new Date().toISOString(),
     });
   }
 
   if (apiKey !== expectedKey) {
     return res.status(401).json({
       success: false,
-      error: 'Invalid API key',
-      timestamp: new Date().toISOString()
+      error: "Invalid API key",
+      timestamp: new Date().toISOString(),
     });
   }
 

@@ -1,1455 +1,1597 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>InterClaude</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-dark">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-light" disabled>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    :root {
-      --bg-primary: #1a1a2e;
-      --bg-secondary: #16213e;
-      --bg-tertiary: #0f3460;
-      --text-primary: #eaeaea;
-      --text-secondary: #a0a0a0;
-      --accent: #00d4ff;
-      --accent-hover: #00a8cc;
-      --success: #00c853;
-      --error: #ff5252;
-      --warning: #ffc107;
-      --border: #2a2a4a;
-      --code-bg: #0d1117;
-    }
-
-    :root.light {
-      --bg-primary: #f5f5f5;
-      --bg-secondary: #ffffff;
-      --bg-tertiary: #e8e8e8;
-      --text-primary: #1a1a1a;
-      --text-secondary: #666666;
-      --accent: #0066cc;
-      --accent-hover: #0052a3;
-      --success: #00a843;
-      --error: #dc3545;
-      --warning: #e6a700;
-      --border: #d0d0d0;
-      --code-bg: #f6f8fa;
-    }
-
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      background: var(--bg-secondary);
-      padding: 1rem 2rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    header h1 {
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: var(--accent);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .version-badge {
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-      background: var(--bg-tertiary);
-      padding: 0.125rem 0.5rem;
-      border-radius: 4px;
-    }
-
-    .stats {
-      display: flex;
-      gap: 1.5rem;
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-    }
-
-    .stat {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .stat-value {
-      color: var(--text-primary);
-      font-weight: 500;
-    }
-
-    .main-container {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    .sidebar {
-      width: 280px;
-      background: var(--bg-secondary);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      transition: width 0.2s, min-width 0.2s;
-      position: relative;
-    }
-
-    .sidebar.collapsed {
-      width: 48px;
-      min-width: 48px;
-    }
-
-    .sidebar.collapsed .sidebar-header h2,
-    .sidebar.collapsed .instance-details {
-      display: none;
-    }
-
-    .sidebar.collapsed .instance-list {
-      padding: 0.25rem;
-    }
-
-    .sidebar.collapsed .instance-item {
-      padding: 0.5rem;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .sidebar.collapsed .instance-item .name {
-      justify-content: center;
-    }
-
-    .sidebar.collapsed .instance-item .instance-name {
-      display: none;
-    }
-
-    .sidebar.collapsed .instance-item .description {
-      display: none;
-    }
-
-    .sidebar.collapsed .instance-item .status-dot {
-      width: 12px;
-      height: 12px;
-    }
-
-    .sidebar.collapsed .sidebar-header {
-      justify-content: center;
-      padding: 1rem 0.5rem;
-    }
-
-    .sidebar-toggle {
-      position: absolute;
-      right: -12px;
-      top: 80px;
-      width: 24px;
-      height: 24px;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-secondary);
-      z-index: 100;
-      transition: all 0.2s;
-    }
-
-    .sidebar-toggle:hover {
-      background: var(--accent);
-      color: var(--bg-primary);
-      border-color: var(--accent);
-    }
-
-    .sidebar-toggle svg {
-      width: 14px;
-      height: 14px;
-      transition: transform 0.2s;
-    }
-
-    .sidebar.collapsed .sidebar-toggle svg {
-      transform: rotate(180deg);
-    }
-
-    .sidebar-header {
-      padding: 1rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .sidebar-header h2 {
-      font-size: 0.875rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-secondary);
-    }
-
-    .btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.875rem;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: var(--bg-primary);
-    }
-
-    .btn-primary:hover {
-      background: var(--accent-hover);
-    }
-
-    .btn-secondary {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-    }
-
-    .btn-secondary:hover {
-      background: #1a4a80;
-    }
-
-    .btn-icon {
-      padding: 0.5rem;
-      background: transparent;
-      color: var(--text-secondary);
-    }
-
-    .btn-icon:hover {
-      color: var(--text-primary);
-      background: var(--bg-tertiary);
-    }
-
-    .instance-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0.5rem;
-    }
-
-    .instance-item {
-      padding: 0.75rem 1rem;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-bottom: 0.25rem;
-    }
-
-    .instance-item:hover {
-      background: var(--bg-tertiary);
-    }
-
-    .instance-item.selected {
-      background: var(--bg-tertiary);
-      border-left: 3px solid var(--accent);
-    }
-
-    .instance-item .name {
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .instance-item .description {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      margin-top: 0.25rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    .status-dot.online { background: var(--success); }
-    .status-dot.offline { background: var(--error); }
-    .status-dot.checking { background: var(--warning); animation: pulse 1s infinite; }
-    .status-dot.loading { animation: pulse 0.5s infinite; }
-
-    .instance-loading-badge {
-      font-size: 0.625rem;
-      color: var(--accent);
-      animation: pulse 0.5s infinite;
-    }
-
-    .retry-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      margin-top: 0.75rem;
-      padding: 0.375rem 0.75rem;
-      font-size: 0.8125rem;
-    }
-
-    .error-content {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    .content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .messages-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.75rem 1.5rem;
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border);
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
-    .messages-header-actions {
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-    }
-
-    .context-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.25rem 0.5rem;
-      background: var(--bg-tertiary);
-      border-radius: 4px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .context-toggle input {
-      display: none;
-    }
-
-    .context-toggle-switch {
-      width: 32px;
-      height: 18px;
-      background: var(--border);
-      border-radius: 9px;
-      position: relative;
-      transition: background 0.2s;
-    }
-
-    .context-toggle-switch::after {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 14px;
-      height: 14px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.2s;
-    }
-
-    .context-toggle input:checked + .context-toggle-switch {
-      background: var(--success);
-    }
-
-    .context-toggle input:checked + .context-toggle-switch::after {
-      transform: translateX(14px);
-    }
-
-    .context-toggle-label {
-      color: var(--text-secondary);
-    }
-
-    .context-toggle input:checked ~ .context-toggle-label {
-      color: var(--success);
-    }
-
-    .context-divider {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin: 1.5rem 0;
-      padding: 0 1rem;
-    }
-
-    .context-divider-line {
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
-
-    .context-divider-text {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.75rem;
-      border-radius: 12px;
-      white-space: nowrap;
-    }
-
-    .context-divider-text.enabled {
-      background: var(--success);
-      color: white;
-    }
-
-    .context-divider-text.disabled {
-      background: var(--border);
-      color: var(--text-secondary);
-    }
-
-    .messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1.5rem;
-    }
-
-    .message {
-      margin-bottom: 1.5rem;
-      animation: fadeIn 0.3s ease;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .message.user-message {
-      align-items: flex-end;
-    }
-
-    .message.user-message .message-header {
-      flex-direction: row-reverse;
-    }
-
-    .message.user-message .message-content {
-      max-width: 80%;
-      border-radius: 12px 12px 4px 12px;
-    }
-
-    .message.assistant-message .message-content {
-      max-width: 90%;
-      border-radius: 12px 12px 12px 4px;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .message-header {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .message-sender {
-      font-weight: 600;
-      font-size: 0.875rem;
-    }
-
-    .message-sender.user { color: var(--accent); }
-    .message-sender.assistant { color: var(--success); }
-
-    .message-time {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-    }
-
-    .message-content {
-      background: var(--bg-secondary);
-      border-radius: 12px;
-      padding: 1rem 1.25rem;
-      line-height: 1.6;
-      position: relative;
-    }
-
-    .message-content.user {
-      background: #d0e8ff;
-      color: #1a1a2e;
-    }
-
-    .message-content.user a {
-      color: #0056b3;
-    }
-
-    :root.light .message-content.user {
-      background: #d0e8ff;
-      color: #1a1a2e;
-    }
-
-    .message-content pre {
-      background: var(--code-bg);
-      border-radius: 8px;
-      padding: 1rem;
-      overflow-x: auto;
-      margin: 0.75rem 0;
-    }
-
-    .message-content code {
-      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-      font-size: 0.875rem;
-    }
-
-    .message-content p {
-      margin-bottom: 0.75rem;
-    }
-
-    .message-content p:last-child {
-      margin-bottom: 0;
-    }
-
-    .message-content ul, .message-content ol {
-      margin: 0.75rem 0;
-      padding-left: 1.5rem;
-    }
-
-    .message-content li {
-      margin-bottom: 0.25rem;
-    }
-
-    .message-content h1, .message-content h2, .message-content h3 {
-      margin: 1rem 0 0.5rem 0;
-    }
-
-    .message-content table {
-      border-collapse: collapse;
-      width: 100%;
-      margin: 0.75rem 0;
-    }
-
-    .message-content th, .message-content td {
-      border: 1px solid var(--border);
-      padding: 0.5rem;
-      text-align: left;
-    }
-
-    .message-content th {
-      background: var(--bg-tertiary);
-    }
-
-    .copy-btn {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    .message-content:hover .copy-btn {
-      opacity: 1;
-    }
-
-    .message-content-wrapper {
-      display: flex;
-      align-items: stretch;
-    }
-
-    .collapse-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      min-width: 24px;
-      margin-right: 0.5rem;
-      padding: 0;
-      background: var(--bg-tertiary);
-      border: none;
-      border-radius: 4px;
-      color: var(--text-secondary);
-      font-size: 0.75rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-    }
-
-    .collapse-toggle:hover {
-      color: var(--text-primary);
-      background: var(--border);
-    }
-
-    .collapse-toggle svg {
-      width: 12px;
-      height: 12px;
-      transition: transform 0.2s;
-      transform: rotate(90deg);
-    }
-
-    .collapse-toggle.collapsed svg {
-      transform: rotate(0deg);
-    }
-
-    .message-content.collapsible {
-      position: relative;
-      flex: 1;
-    }
-
-    .message-content.collapsed {
-      max-height: 4.5em;
-      overflow: hidden;
-    }
-
-    .message-content.collapsed::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 2em;
-      background: linear-gradient(transparent, var(--bg-secondary));
-      pointer-events: none;
-    }
-
-    .input-area {
-      background: var(--bg-secondary);
-      border-top: 1px solid var(--border);
-      padding: 1rem 1.5rem;
-      min-height: 100px;
-      max-height: 50vh;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 5;
-      display: flex;
-      flex-direction: column;
-      height: 150px;
-    }
-
-    .messages {
-      padding-bottom: 120px; /* Space for input area */
-    }
-
-    .resize-handle {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 6px;
-      cursor: ns-resize;
-      background: transparent;
-      transition: background 0.2s;
-    }
-
-    .resize-handle:hover,
-    .resize-handle.dragging {
-      background: var(--accent);
-    }
-
-    .resize-handle::before {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 40px;
-      height: 3px;
-      background: var(--border);
-      border-radius: 2px;
-    }
-
-    .resize-handle:hover::before,
-    .resize-handle.dragging::before {
-      background: var(--accent);
-    }
-
-    .input-container {
-      display: flex;
-      gap: 0.75rem;
-      align-items: flex-start;
-      flex: 1;
-      margin-top: 10px;
-      min-height: 0;
-    }
-
-    .input-wrapper {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      height: 100%;
-    }
-
-    textarea {
-      width: 100%;
-      flex: 1;
-      min-height: 40px;
-      height: 100%;
-      padding: 0.75rem 1rem;
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: var(--text-primary);
-      font-family: inherit;
-      font-size: 0.9375rem;
-      resize: none;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    textarea:focus {
-      border-color: var(--accent);
-    }
-
-    textarea::placeholder {
-      color: var(--text-secondary);
-    }
-
-    .send-controls {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .send-btn {
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
-    }
-
-    .send-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .send-controls .context-toggle {
-      padding: 0.125rem 0.375rem;
-      font-size: 0.6875rem;
-      position: relative;
-    }
-
-    .send-controls .context-toggle-switch {
-      width: 26px;
-      height: 14px;
-    }
-
-    .send-controls .context-toggle-switch::after {
-      top: 2px;
-      left: 2px;
-      width: 10px;
-      height: 10px;
-    }
-
-    .send-controls .context-toggle input:checked + .context-toggle-switch::after {
-      transform: translateX(12px);
-    }
-
-
-    .loading {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: var(--text-secondary);
-      padding: 1rem;
-    }
-
-    .spinner {
-      width: 20px;
-      height: 20px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .timer {
-      font-variant-numeric: tabular-nums;
-    }
-
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: var(--text-secondary);
-      text-align: center;
-      padding: 2rem;
-    }
-
-    .empty-state h3 {
-      font-size: 1.25rem;
-      margin-bottom: 0.5rem;
-      color: var(--text-primary);
-    }
-
-    .toast {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-      padding: 0.75rem 1.25rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      animation: slideIn 0.3s ease;
-      z-index: 1000;
-    }
-
-    .toast.success { border-left: 3px solid var(--success); }
-    .toast.error { border-left: 3px solid var(--error); }
-
-    @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-
-    .instance-details {
-      padding: 1rem;
-      border-top: 1px solid var(--border);
-      font-size: 0.8125rem;
-      overflow-y: auto;
-      max-height: 50vh;
-    }
-
-    .instance-details .detail-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-    }
-
-    .instance-details .detail-label {
-      color: var(--text-secondary);
-    }
-
-    .instance-details .persona {
-      margin-top: 0.75rem;
-      padding-top: 0.75rem;
-      border-top: 1px solid var(--border);
-      color: var(--text-secondary);
-    }
-
-    .instance-details .persona-label {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      margin-bottom: 0.375rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .instance-details .persona-text {
-      font-size: 0.8125rem;
-      line-height: 1.5;
-      max-height: 200px;
-      min-height: 50px;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding: 0.5rem;
-      padding-right: 0.75rem;
-      background: var(--bg-primary);
-      border-radius: 6px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      word-break: break-word;
-    }
-
-    .instance-details .persona-text::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .instance-details .persona-text::-webkit-scrollbar-track {
-      background: var(--bg-tertiary);
-      border-radius: 4px;
-    }
-
-    .instance-details .persona-text::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 4px;
-      min-height: 30px;
-    }
-
-    .instance-details .persona-text::-webkit-scrollbar-thumb:hover {
-      background: var(--text-secondary);
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-    }
-
-    .theme-toggle {
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 0.25rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      transition: all 0.3s;
-    }
-
-    .theme-toggle:hover {
-      border-color: var(--accent);
-    }
-
-    .theme-toggle-inner {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    .theme-toggle-option {
-      padding: 0.375rem 0.5rem;
-      border-radius: 16px;
-      color: var(--text-secondary);
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-    }
-
-    .theme-toggle-option.active {
-      background: var(--accent);
-      color: var(--bg-primary);
-    }
-
-    .theme-toggle-option svg {
-      width: 16px;
-      height: 16px;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>InterClaude <span id="app-version" class="version-badge"></span></h1>
-    <div class="header-right">
-      <div class="stats">
-        <div class="stat">
-          <span>Requests:</span>
-          <span class="stat-value" id="stat-requests">0</span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InterClaude</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
+      id="hljs-dark"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+      id="hljs-light"
+      disabled
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg-primary: #1a1a2e;
+        --bg-secondary: #16213e;
+        --bg-tertiary: #0f3460;
+        --text-primary: #eaeaea;
+        --text-secondary: #a0a0a0;
+        --accent: #00d4ff;
+        --accent-hover: #00a8cc;
+        --success: #00c853;
+        --error: #ff5252;
+        --warning: #ffc107;
+        --border: #2a2a4a;
+        --code-bg: #0d1117;
+      }
+
+      :root.light {
+        --bg-primary: #f5f5f5;
+        --bg-secondary: #ffffff;
+        --bg-tertiary: #e8e8e8;
+        --text-primary: #1a1a1a;
+        --text-secondary: #666666;
+        --accent: #0066cc;
+        --accent-hover: #0052a3;
+        --success: #00a843;
+        --error: #dc3545;
+        --warning: #e6a700;
+        --border: #d0d0d0;
+        --code-bg: #f6f8fa;
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        background: var(--bg-secondary);
+        padding: 1rem 2rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .version-badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        background: var(--bg-tertiary);
+        padding: 0.125rem 0.5rem;
+        border-radius: 4px;
+      }
+
+      .stats {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+      }
+
+      .stat {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .stat-value {
+        color: var(--text-primary);
+        font-weight: 500;
+      }
+
+      .main-container {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .sidebar {
+        width: 280px;
+        background: var(--bg-secondary);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        transition:
+          width 0.2s,
+          min-width 0.2s;
+        position: relative;
+      }
+
+      .sidebar.collapsed {
+        width: 48px;
+        min-width: 48px;
+      }
+
+      .sidebar.collapsed .sidebar-header h2,
+      .sidebar.collapsed .instance-details {
+        display: none;
+      }
+
+      .sidebar.collapsed .instance-list {
+        padding: 0.25rem;
+      }
+
+      .sidebar.collapsed .instance-item {
+        padding: 0.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .sidebar.collapsed .instance-item .name {
+        justify-content: center;
+      }
+
+      .sidebar.collapsed .instance-item .instance-name {
+        display: none;
+      }
+
+      .sidebar.collapsed .instance-item .description {
+        display: none;
+      }
+
+      .sidebar.collapsed .instance-item .status-dot {
+        width: 12px;
+        height: 12px;
+      }
+
+      .sidebar.collapsed .sidebar-header {
+        justify-content: center;
+        padding: 1rem 0.5rem;
+      }
+
+      .sidebar-toggle {
+        position: absolute;
+        right: -12px;
+        top: 80px;
+        width: 24px;
+        height: 24px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        z-index: 100;
+        transition: all 0.2s;
+      }
+
+      .sidebar-toggle:hover {
+        background: var(--accent);
+        color: var(--bg-primary);
+        border-color: var(--accent);
+      }
+
+      .sidebar-toggle svg {
+        width: 14px;
+        height: 14px;
+        transition: transform 0.2s;
+      }
+
+      .sidebar.collapsed .sidebar-toggle svg {
+        transform: rotate(180deg);
+      }
+
+      .sidebar-header {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .sidebar-header h2 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+      }
+
+      .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: var(--bg-primary);
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-hover);
+      }
+
+      .btn-secondary {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+      }
+
+      .btn-secondary:hover {
+        background: #1a4a80;
+      }
+
+      .btn-icon {
+        padding: 0.5rem;
+        background: transparent;
+        color: var(--text-secondary);
+      }
+
+      .btn-icon:hover {
+        color: var(--text-primary);
+        background: var(--bg-tertiary);
+      }
+
+      .instance-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.5rem;
+      }
+
+      .instance-item {
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 0.25rem;
+      }
+
+      .instance-item:hover {
+        background: var(--bg-tertiary);
+      }
+
+      .instance-item.selected {
+        background: var(--bg-tertiary);
+        border-left: 3px solid var(--accent);
+      }
+
+      .instance-item .name {
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .instance-item .description {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .status-dot.online {
+        background: var(--success);
+      }
+      .status-dot.offline {
+        background: var(--error);
+      }
+      .status-dot.checking {
+        background: var(--warning);
+        animation: pulse 1s infinite;
+      }
+      .status-dot.loading {
+        animation: pulse 0.5s infinite;
+      }
+
+      .instance-loading-badge {
+        font-size: 0.625rem;
+        color: var(--accent);
+        animation: pulse 0.5s infinite;
+      }
+
+      .retry-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        margin-top: 0.75rem;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8125rem;
+      }
+
+      .error-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .messages-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border);
+        font-weight: 500;
+        color: var(--text-secondary);
+      }
+
+      .messages-header-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .context-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .context-toggle input {
+        display: none;
+      }
+
+      .context-toggle-switch {
+        width: 32px;
+        height: 18px;
+        background: var(--border);
+        border-radius: 9px;
+        position: relative;
+        transition: background 0.2s;
+      }
+
+      .context-toggle-switch::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 14px;
+        height: 14px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.2s;
+      }
+
+      .context-toggle input:checked + .context-toggle-switch {
+        background: var(--success);
+      }
+
+      .context-toggle input:checked + .context-toggle-switch::after {
+        transform: translateX(14px);
+      }
+
+      .context-toggle-label {
+        color: var(--text-secondary);
+      }
+
+      .context-toggle input:checked ~ .context-toggle-label {
+        color: var(--success);
+      }
+
+      .context-divider {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 1.5rem 0;
+        padding: 0 1rem;
+      }
+
+      .context-divider-line {
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      .context-divider-text {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        white-space: nowrap;
+      }
+
+      .context-divider-text.enabled {
+        background: var(--success);
+        color: white;
+      }
+
+      .context-divider-text.disabled {
+        background: var(--border);
+        color: var(--text-secondary);
+      }
+
+      .messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+      }
+
+      .message {
+        margin-bottom: 1.5rem;
+        animation: fadeIn 0.3s ease;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .message.user-message {
+        align-items: flex-end;
+      }
+
+      .message.user-message .message-header {
+        flex-direction: row-reverse;
+      }
+
+      .message.user-message .message-content {
+        max-width: 80%;
+        border-radius: 12px 12px 4px 12px;
+      }
+
+      .message.assistant-message .message-content {
+        max-width: 90%;
+        border-radius: 12px 12px 12px 4px;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .message-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .message-sender {
+        font-weight: 600;
+        font-size: 0.875rem;
+      }
+
+      .message-sender.user {
+        color: var(--accent);
+      }
+      .message-sender.assistant {
+        color: var(--success);
+      }
+
+      .message-time {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .message-content {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        line-height: 1.6;
+        position: relative;
+      }
+
+      .message-content.user {
+        background: #d0e8ff;
+        color: #1a1a2e;
+      }
+
+      .message-content.user a {
+        color: #0056b3;
+      }
+
+      :root.light .message-content.user {
+        background: #d0e8ff;
+        color: #1a1a2e;
+      }
+
+      .message-content pre {
+        background: var(--code-bg);
+        border-radius: 8px;
+        padding: 1rem;
+        overflow-x: auto;
+        margin: 0.75rem 0;
+      }
+
+      .message-content code {
+        font-family: "SF Mono", Monaco, "Courier New", monospace;
+        font-size: 0.875rem;
+      }
+
+      .message-content p {
+        margin-bottom: 0.75rem;
+      }
+
+      .message-content p:last-child {
+        margin-bottom: 0;
+      }
+
+      .message-content ul,
+      .message-content ol {
+        margin: 0.75rem 0;
+        padding-left: 1.5rem;
+      }
+
+      .message-content li {
+        margin-bottom: 0.25rem;
+      }
+
+      .message-content h1,
+      .message-content h2,
+      .message-content h3 {
+        margin: 1rem 0 0.5rem 0;
+      }
+
+      .message-content table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 0.75rem 0;
+      }
+
+      .message-content th,
+      .message-content td {
+        border: 1px solid var(--border);
+        padding: 0.5rem;
+        text-align: left;
+      }
+
+      .message-content th {
+        background: var(--bg-tertiary);
+      }
+
+      .copy-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+
+      .message-content:hover .copy-btn {
+        opacity: 1;
+      }
+
+      .message-content-wrapper {
+        display: flex;
+        align-items: stretch;
+      }
+
+      .collapse-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        min-width: 24px;
+        margin-right: 0.5rem;
+        padding: 0;
+        background: var(--bg-tertiary);
+        border: none;
+        border-radius: 4px;
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+      }
+
+      .collapse-toggle:hover {
+        color: var(--text-primary);
+        background: var(--border);
+      }
+
+      .collapse-toggle svg {
+        width: 12px;
+        height: 12px;
+        transition: transform 0.2s;
+        transform: rotate(90deg);
+      }
+
+      .collapse-toggle.collapsed svg {
+        transform: rotate(0deg);
+      }
+
+      .message-content.collapsible {
+        position: relative;
+        flex: 1;
+      }
+
+      .message-content.collapsed {
+        max-height: 4.5em;
+        overflow: hidden;
+      }
+
+      .message-content.collapsed::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2em;
+        background: linear-gradient(transparent, var(--bg-secondary));
+        pointer-events: none;
+      }
+
+      .input-area {
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border);
+        padding: 1rem 1.5rem;
+        min-height: 100px;
+        max-height: 50vh;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 5;
+        display: flex;
+        flex-direction: column;
+        height: 150px;
+      }
+
+      .messages {
+        padding-bottom: 120px; /* Space for input area */
+      }
+
+      .resize-handle {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        cursor: ns-resize;
+        background: transparent;
+        transition: background 0.2s;
+      }
+
+      .resize-handle:hover,
+      .resize-handle.dragging {
+        background: var(--accent);
+      }
+
+      .resize-handle::before {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 3px;
+        background: var(--border);
+        border-radius: 2px;
+      }
+
+      .resize-handle:hover::before,
+      .resize-handle.dragging::before {
+        background: var(--accent);
+      }
+
+      .input-container {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+        flex: 1;
+        margin-top: 10px;
+        min-height: 0;
+      }
+
+      .input-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+      }
+
+      textarea {
+        width: 100%;
+        flex: 1;
+        min-height: 40px;
+        height: 100%;
+        padding: 0.75rem 1rem;
+        background: var(--bg-primary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 0.9375rem;
+        resize: none;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      textarea:focus {
+        border-color: var(--accent);
+      }
+
+      textarea::placeholder {
+        color: var(--text-secondary);
+      }
+
+      .send-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .send-btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+      }
+
+      .send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .send-controls .context-toggle {
+        padding: 0.125rem 0.375rem;
+        font-size: 0.6875rem;
+        position: relative;
+      }
+
+      .send-controls .context-toggle-switch {
+        width: 26px;
+        height: 14px;
+      }
+
+      .send-controls .context-toggle-switch::after {
+        top: 2px;
+        left: 2px;
+        width: 10px;
+        height: 10px;
+      }
+
+      .send-controls .context-toggle input:checked + .context-toggle-switch::after {
+        transform: translateX(12px);
+      }
+
+      .loading {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+        padding: 1rem;
+      }
+
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .timer {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--text-secondary);
+        text-align: center;
+        padding: 2rem;
+      }
+
+      .empty-state h3 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        padding: 0.75rem 1.25rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.3s ease;
+        z-index: 1000;
+      }
+
+      .toast.success {
+        border-left: 3px solid var(--success);
+      }
+      .toast.error {
+        border-left: 3px solid var(--error);
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .instance-details {
+        padding: 1rem;
+        border-top: 1px solid var(--border);
+        font-size: 0.8125rem;
+        overflow-y: auto;
+        max-height: 50vh;
+      }
+
+      .instance-details .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+      }
+
+      .instance-details .detail-label {
+        color: var(--text-secondary);
+      }
+
+      .instance-details .persona {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border);
+        color: var(--text-secondary);
+      }
+
+      .instance-details .persona-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.375rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .instance-details .persona-text {
+        font-size: 0.8125rem;
+        line-height: 1.5;
+        max-height: 200px;
+        min-height: 50px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0.5rem;
+        padding-right: 0.75rem;
+        background: var(--bg-primary);
+        border-radius: 6px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        word-break: break-word;
+      }
+
+      .instance-details .persona-text::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .instance-details .persona-text::-webkit-scrollbar-track {
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+      }
+
+      .instance-details .persona-text::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+        min-height: 30px;
+      }
+
+      .instance-details .persona-text::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+      }
+
+      .theme-toggle {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 0.25rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: all 0.3s;
+      }
+
+      .theme-toggle:hover {
+        border-color: var(--accent);
+      }
+
+      .theme-toggle-inner {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .theme-toggle-option {
+        padding: 0.375rem 0.5rem;
+        border-radius: 16px;
+        color: var(--text-secondary);
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+      }
+
+      .theme-toggle-option.active {
+        background: var(--accent);
+        color: var(--bg-primary);
+      }
+
+      .theme-toggle-option svg {
+        width: 16px;
+        height: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>InterClaude <span id="app-version" class="version-badge"></span></h1>
+      <div class="header-right">
+        <div class="stats">
+          <div class="stat">
+            <span>Requests:</span>
+            <span class="stat-value" id="stat-requests">0</span>
+          </div>
+          <div class="stat">
+            <span>Avg Response:</span>
+            <span class="stat-value" id="stat-avg-time">0ms</span>
+          </div>
         </div>
-        <div class="stat">
-          <span>Avg Response:</span>
-          <span class="stat-value" id="stat-avg-time">0ms</span>
-        </div>
-      </div>
-      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
-        <div class="theme-toggle-inner">
-          <span class="theme-toggle-option" id="theme-light">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="5"></circle>
-              <line x1="12" y1="1" x2="12" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="23"></line>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-              <line x1="1" y1="12" x2="3" y2="12"></line>
-              <line x1="21" y1="12" x2="23" y2="12"></line>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
-          </span>
-          <span class="theme-toggle-option active" id="theme-dark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-          </span>
-        </div>
-      </button>
-    </div>
-  </header>
-
-  <div class="main-container">
-    <aside class="sidebar" id="sidebar">
-      <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-      </button>
-      <div class="sidebar-header">
-        <h2 id="instances-header">Instances (0)</h2>
-        <button class="btn btn-icon" onclick="discoverInstances()" title="Refresh instances">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-          </svg>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+          <div class="theme-toggle-inner">
+            <span class="theme-toggle-option" id="theme-light">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            </span>
+            <span class="theme-toggle-option active" id="theme-dark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </span>
+          </div>
         </button>
       </div>
-      <div class="instance-list" id="instance-list"></div>
-      <div class="instance-details" id="instance-details"></div>
-    </aside>
+    </header>
 
-    <main class="content">
-      <div class="messages-header">
-        <span id="conversation-title">Conversation</span>
-        <div class="messages-header-actions">
-          <button class="btn btn-icon" onclick="collapseAll()" title="Collapse all">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="18 15 12 9 6 15"></polyline>
-            </svg>
-          </button>
-          <button class="btn btn-icon" onclick="expandAll()" title="Expand all">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-          <button class="btn btn-icon" onclick="clearConversation()" title="Clear conversation">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    <div class="main-container">
+      <aside class="sidebar" id="sidebar">
+        <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <div class="sidebar-header">
+          <h2 id="instances-header">Instances (0)</h2>
+          <button class="btn btn-icon" onclick="discoverInstances()" title="Refresh instances">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+              />
             </svg>
           </button>
         </div>
-      </div>
-      <div class="messages" id="messages">
-        <div class="empty-state">
-          <h3>Welcome to InterClaude</h3>
-          <p>Select an instance and ask a question to get started.</p>
-        </div>
-      </div>
+        <div class="instance-list" id="instance-list"></div>
+        <div class="instance-details" id="instance-details"></div>
+      </aside>
 
-      <div class="input-area" id="input-area">
-        <div class="resize-handle" id="resize-handle"></div>
-        <div class="input-container">
-          <div class="input-wrapper">
-            <textarea
-              id="question-input"
-              placeholder="Select an instance to ask a question... (Enter to send, Shift+Enter for new line)"
-              rows="2"
-            ></textarea>
-          </div>
-          <div class="send-controls">
-            <button class="btn btn-primary send-btn" id="send-btn" onclick="sendQuestion()" disabled>
-              Send
+      <main class="content">
+        <div class="messages-header">
+          <span id="conversation-title">Conversation</span>
+          <div class="messages-header-actions">
+            <button class="btn btn-icon" onclick="collapseAll()" title="Collapse all">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="18 15 12 9 6 15"></polyline>
+              </svg>
             </button>
-            <div class="context-toggle" id="context-toggle-container" onclick="handleContextToggleClick()" title="When enabled, the instance remembers previous messages in this conversation">
-              <input type="checkbox" id="context-toggle">
-              <span class="context-toggle-switch"></span>
-              <span class="context-toggle-label">Context</span>
+            <button class="btn btn-icon" onclick="expandAll()" title="Expand all">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <button class="btn btn-icon" onclick="clearConversation()" title="Clear conversation">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path
+                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="messages" id="messages">
+          <div class="empty-state">
+            <h3>Welcome to InterClaude</h3>
+            <p>Select an instance and ask a question to get started.</p>
+          </div>
+        </div>
+
+        <div class="input-area" id="input-area">
+          <div class="resize-handle" id="resize-handle"></div>
+          <div class="input-container">
+            <div class="input-wrapper">
+              <textarea
+                id="question-input"
+                placeholder="Select an instance to ask a question... (Enter to send, Shift+Enter for new line)"
+                rows="2"
+              ></textarea>
+            </div>
+            <div class="send-controls">
+              <button
+                class="btn btn-primary send-btn"
+                id="send-btn"
+                onclick="sendQuestion()"
+                disabled
+              >
+                Send
+              </button>
+              <div
+                class="context-toggle"
+                id="context-toggle-container"
+                onclick="handleContextToggleClick()"
+                title="When enabled, the instance remembers previous messages in this conversation"
+              >
+                <input type="checkbox" id="context-toggle" />
+                <span class="context-toggle-switch"></span>
+                <span class="context-toggle-label">Context</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </main>
-  </div>
+      </main>
+    </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script>
-    // Configure marked
-    marked.setOptions({
-      highlight: function(code, lang) {
-        if (lang && hljs.getLanguage(lang)) {
-          return hljs.highlight(code, { language: lang }).value;
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+      // Configure marked
+      marked.setOptions({
+        highlight: function (code, lang) {
+          if (lang && hljs.getLanguage(lang)) {
+            return hljs.highlight(code, { language: lang }).value;
+          }
+          return hljs.highlightAuto(code).value;
+        },
+        breaks: true,
+      });
+
+      // State
+      let registry = { instances: {}, default: null };
+      let instanceStatus = {};
+      let selectedInstance = null;
+      let loadingInstances = {}; // { instanceName: { timer, startTime, loadingId } }
+      let totalRequests = 0;
+      let totalResponses = 0;
+      let avgResponseTime = 0;
+      let conversations = {}; // { instanceName: [{ type, content, sender, duration, time }] }
+      let sessionIds = {}; // { instanceName: sessionId } - for context continuity
+      let contextModes = {}; // { instanceName: boolean } - per-instance context mode
+
+      // Load registry
+      async function loadRegistry() {
+        try {
+          const response = await fetch("/api/registry");
+          registry = await response.json();
+          // Restore saved instance or use default
+          const savedInstance = localStorage.getItem("selectedInstance");
+          if (savedInstance && registry.instances[savedInstance]) {
+            selectedInstance = savedInstance;
+          } else {
+            selectedInstance = registry.default || Object.keys(registry.instances)[0];
+          }
+          renderInstanceList();
+          renderConversation();
+          updateConversationTitle();
+          discoverInstances();
+        } catch (e) {
+          showToast("Failed to load registry", "error");
         }
-        return hljs.highlightAuto(code).value;
-      },
-      breaks: true
-    });
+      }
 
-    // State
-    let registry = { instances: {}, default: null };
-    let instanceStatus = {};
-    let selectedInstance = null;
-    let loadingInstances = {}; // { instanceName: { timer, startTime, loadingId } }
-    let totalRequests = 0;
-    let totalResponses = 0;
-    let avgResponseTime = 0;
-    let conversations = {}; // { instanceName: [{ type, content, sender, duration, time }] }
-    let sessionIds = {}; // { instanceName: sessionId } - for context continuity
-    let contextModes = {}; // { instanceName: boolean } - per-instance context mode
-
-    // Load registry
-    async function loadRegistry() {
-      try {
-        const response = await fetch('/api/registry');
-        registry = await response.json();
-        // Restore saved instance or use default
-        const savedInstance = localStorage.getItem('selectedInstance');
-        if (savedInstance && registry.instances[savedInstance]) {
-          selectedInstance = savedInstance;
+      // Update conversation title
+      function updateConversationTitle() {
+        const title = document.getElementById("conversation-title");
+        if (selectedInstance) {
+          const msgCount = (conversations[selectedInstance] || []).length;
+          title.textContent = `${selectedInstance} (${msgCount} messages)`;
         } else {
-          selectedInstance = registry.default || Object.keys(registry.instances)[0];
+          title.textContent = "Conversation";
         }
-        renderInstanceList();
-        renderConversation();
-        updateConversationTitle();
-        discoverInstances();
-      } catch (e) {
-        showToast('Failed to load registry', 'error');
       }
-    }
 
-    // Update conversation title
-    function updateConversationTitle() {
-      const title = document.getElementById('conversation-title');
-      if (selectedInstance) {
-        const msgCount = (conversations[selectedInstance] || []).length;
-        title.textContent = `${selectedInstance} (${msgCount} messages)`;
-      } else {
-        title.textContent = 'Conversation';
-      }
-    }
-
-    // Render instance list
-    function renderInstanceList() {
-      const list = document.getElementById('instance-list');
-      const instanceNames = Object.keys(registry.instances);
-      const totalCount = instanceNames.length;
-      const onlineCount = instanceNames.filter(name => instanceStatus[name] === 'online').length;
-      document.getElementById('instances-header').textContent = `Instances (${onlineCount}/${totalCount})`;
-      list.innerHTML = Object.entries(registry.instances).map(([name, instance]) => {
-        const status = instanceStatus[name] || 'checking';
-        const isSelected = name === selectedInstance;
-        const isLoading = !!loadingInstances[name];
-        const statusLabel = isLoading ? 'loading...' : status;
-        return `
-          <div class="instance-item ${isSelected ? 'selected' : ''} ${isLoading ? 'loading' : ''}" onclick="selectInstance('${name}')" title="${name} (${statusLabel})">
+      // Render instance list
+      function renderInstanceList() {
+        const list = document.getElementById("instance-list");
+        const instanceNames = Object.keys(registry.instances);
+        const totalCount = instanceNames.length;
+        const onlineCount = instanceNames.filter(
+          (name) => instanceStatus[name] === "online",
+        ).length;
+        document.getElementById("instances-header").textContent =
+          `Instances (${onlineCount}/${totalCount})`;
+        list.innerHTML = Object.entries(registry.instances)
+          .map(([name, instance]) => {
+            const status = instanceStatus[name] || "checking";
+            const isSelected = name === selectedInstance;
+            const isLoading = !!loadingInstances[name];
+            const statusLabel = isLoading ? "loading..." : status;
+            return `
+          <div class="instance-item ${isSelected ? "selected" : ""} ${isLoading ? "loading" : ""}" onclick="selectInstance('${name}')" title="${name} (${statusLabel})">
             <div class="name">
-              <span class="status-dot ${status} ${isLoading ? 'loading' : ''}" title="${name} (${statusLabel})"></span>
+              <span class="status-dot ${status} ${isLoading ? "loading" : ""}" title="${name} (${statusLabel})"></span>
               <span class="instance-name">${name}</span>
-              ${isLoading ? '<span class="instance-loading-badge">...</span>' : ''}
+              ${isLoading ? '<span class="instance-loading-badge">...</span>' : ""}
             </div>
-            <div class="description">${instance.description || instance.host + ':' + instance.port}</div>
+            <div class="description">${instance.description || instance.host + ":" + instance.port}</div>
           </div>
         `;
-      }).join('');
+          })
+          .join("");
 
-      updateInstanceDetails();
-      updateInputHint();
-    }
-
-    // Update instance details panel
-    function updateInstanceDetails() {
-      const details = document.getElementById('instance-details');
-      if (!selectedInstance) {
-        details.innerHTML = '';
-        return;
+        updateInstanceDetails();
+        updateInputHint();
       }
 
-      const instance = registry.instances[selectedInstance];
-      const status = instanceStatus[selectedInstance] || 'checking';
-      const info = instanceStatus[selectedInstance + '_details'] || {};
+      // Update instance details panel
+      function updateInstanceDetails() {
+        const details = document.getElementById("instance-details");
+        if (!selectedInstance) {
+          details.innerHTML = "";
+          return;
+        }
 
-      details.innerHTML = `
+        const instance = registry.instances[selectedInstance];
+        const status = instanceStatus[selectedInstance] || "checking";
+        const info = instanceStatus[selectedInstance + "_details"] || {};
+
+        details.innerHTML = `
         <div class="detail-row">
           <span class="detail-label">Host</span>
           <span>${instance.host}:${instance.port}</span>
         </div>
         <div class="detail-row">
           <span class="detail-label">Status</span>
-          <span style="color: var(--${status === 'online' ? 'success' : status === 'offline' ? 'error' : 'warning'})">${status}</span>
+          <span style="color: var(--${status === "online" ? "success" : status === "offline" ? "error" : "warning"})">${status}</span>
         </div>
-        ${info.version ? `
+        ${
+          info.version
+            ? `
         <div class="detail-row">
           <span class="detail-label">Version</span>
           <span>${info.version}</span>
         </div>
-        ` : ''}
-        ${info.instance_name ? `
+        `
+            : ""
+        }
+        ${
+          info.instance_name
+            ? `
         <div class="detail-row">
           <span class="detail-label">Instance</span>
           <span>${info.instance_name}</span>
         </div>
-        ` : ''}
-        ${typeof info.memory_enabled !== 'undefined' ? `
+        `
+            : ""
+        }
+        ${
+          typeof info.memory_enabled !== "undefined"
+            ? `
         <div class="detail-row">
           <span class="detail-label">Memory</span>
-          <span style="color: var(--${info.memory_enabled ? 'success' : 'text-secondary'})">${info.memory_enabled ? 'Enabled' : 'Disabled'}</span>
+          <span style="color: var(--${info.memory_enabled ? "success" : "text-secondary"})">${info.memory_enabled ? "Enabled" : "Disabled"}</span>
         </div>
-        ` : ''}
-        ${typeof info.package_context_enabled !== 'undefined' ? `
+        `
+            : ""
+        }
+        ${
+          typeof info.package_context_enabled !== "undefined"
+            ? `
         <div class="detail-row">
           <span class="detail-label">Packages</span>
-          <span style="color: var(--${info.package_context_enabled && info.packages_discovered > 0 ? 'success' : 'text-secondary'})">
-            ${info.package_context_enabled ? `${info.packages_discovered || 0} discovered (${info.packages_with_docs || 0} with docs)` : 'Disabled'}
+          <span style="color: var(--${info.package_context_enabled && info.packages_discovered > 0 ? "success" : "text-secondary"})">
+            ${info.package_context_enabled ? `${info.packages_discovered || 0} discovered (${info.packages_with_docs || 0} with docs)` : "Disabled"}
           </span>
         </div>
-        ` : ''}
-        ${info.persona ? `
+        `
+            : ""
+        }
+        ${
+          info.persona
+            ? `
         <div class="persona">
           <div class="persona-label">System Prompt</div>
           <div class="persona-text">${escapeHtml(info.persona)}</div>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
       `;
-    }
-
-    // Select instance
-    function selectInstance(name) {
-      selectedInstance = name;
-      localStorage.setItem('selectedInstance', name);
-      renderInstanceList();
-      renderConversation();
-      updateConversationTitle();
-      updateSendButton();
-      updateContextToggle();
-    }
-
-    // Update input placeholder
-    function updateInputHint() {
-      const btn = document.getElementById('send-btn');
-      const textarea = document.getElementById('question-input');
-      if (selectedInstance && instanceStatus[selectedInstance] === 'online') {
-        textarea.placeholder = `Ask a question to ${selectedInstance}... (Enter to send, Shift+Enter for new line)`;
-        btn.disabled = false;
-      } else if (selectedInstance) {
-        textarea.placeholder = `${selectedInstance} is ${instanceStatus[selectedInstance] || 'checking'}...`;
-        btn.disabled = true;
-      } else {
-        textarea.placeholder = 'Select an instance to ask a question...';
-        btn.disabled = true;
       }
-    }
 
-    // Discover instances
-    async function discoverInstances() {
-      for (const name of Object.keys(registry.instances)) {
-        instanceStatus[name] = 'checking';
+      // Select instance
+      function selectInstance(name) {
+        selectedInstance = name;
+        localStorage.setItem("selectedInstance", name);
+        renderInstanceList();
+        renderConversation();
+        updateConversationTitle();
+        updateSendButton();
+        updateContextToggle();
       }
-      renderInstanceList();
 
-      for (const [name, instance] of Object.entries(registry.instances)) {
+      // Update input placeholder
+      function updateInputHint() {
+        const btn = document.getElementById("send-btn");
+        const textarea = document.getElementById("question-input");
+        if (selectedInstance && instanceStatus[selectedInstance] === "online") {
+          textarea.placeholder = `Ask a question to ${selectedInstance}... (Enter to send, Shift+Enter for new line)`;
+          btn.disabled = false;
+        } else if (selectedInstance) {
+          textarea.placeholder = `${selectedInstance} is ${instanceStatus[selectedInstance] || "checking"}...`;
+          btn.disabled = true;
+        } else {
+          textarea.placeholder = "Select an instance to ask a question...";
+          btn.disabled = true;
+        }
+      }
+
+      // Discover instances
+      async function discoverInstances() {
+        for (const name of Object.keys(registry.instances)) {
+          instanceStatus[name] = "checking";
+        }
+        renderInstanceList();
+
+        for (const [name, instance] of Object.entries(registry.instances)) {
+          try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
+
+            const response = await fetch(`http://${instance.host}:${instance.port}/health`, {
+              signal: controller.signal,
+            });
+            clearTimeout(timeout);
+
+            if (response.ok) {
+              const data = await response.json();
+              instanceStatus[name] = "online";
+              instanceStatus[name + "_details"] = data;
+            } else {
+              instanceStatus[name] = "offline";
+            }
+          } catch (e) {
+            instanceStatus[name] = "offline";
+          }
+          renderInstanceList();
+        }
+      }
+
+      // Send question
+      async function sendQuestion() {
+        const input = document.getElementById("question-input");
+        const question = input.value.trim();
+
+        if (!question || !selectedInstance) return;
+
+        const targetInstance = selectedInstance;
+        const instance = registry.instances[targetInstance];
+        if (!instance) return;
+
+        // Check if this specific instance is already loading
+        if (loadingInstances[targetInstance]) {
+          showToast(`${targetInstance} is already processing a request`, "error");
+          return;
+        }
+
+        input.value = "";
+
+        // Add user message to target instance's conversation
+        const prevSelected = selectedInstance;
+        selectedInstance = targetInstance;
+        addMessage("user", question);
+
+        // Show loading for this instance
+        const loadingId = showLoading(targetInstance);
+        loadingInstances[targetInstance] = {
+          loadingId,
+          startTime: Date.now(),
+        };
+
+        totalRequests++;
+        updateStats();
+        updateSendButton();
+        renderInstanceList();
+
+        const startTime = Date.now();
+
         try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 5000);
+          const headers = { "Content-Type": "application/json" };
+          if (instance.apiKey) {
+            headers["X-API-Key"] = instance.apiKey;
+          }
 
-          const response = await fetch(`http://${instance.host}:${instance.port}/health`, {
-            signal: controller.signal
+          // Build request body with optional session_id for context continuity
+          const requestBody = { question };
+          const instanceContextMode = contextModes[targetInstance] || false;
+          if (instanceContextMode && sessionIds[targetInstance]) {
+            requestBody.session_id = sessionIds[targetInstance];
+          }
+
+          const response = await fetch(`http://${instance.host}:${instance.port}/ask`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(requestBody),
           });
-          clearTimeout(timeout);
+
+          const duration = Date.now() - startTime;
+          avgResponseTime = (avgResponseTime * totalResponses + duration) / (totalResponses + 1);
+          totalResponses++;
+          updateStats();
+
+          // Switch back to target instance to add response
+          selectedInstance = targetInstance;
 
           if (response.ok) {
             const data = await response.json();
-            instanceStatus[name] = 'online';
-            instanceStatus[name + '_details'] = data;
+            // Save session ID for context continuity
+            if (instanceContextMode && data.session_id) {
+              sessionIds[targetInstance] = data.session_id;
+              saveSessionIds();
+            }
+            addMessage("assistant", data.answer, data.instance_name || targetInstance, duration);
           } else {
-            instanceStatus[name] = 'offline';
+            const data = await response.json();
+            addMessage("error", data.error || "Unknown error", null, null, true, question);
           }
         } catch (e) {
-          instanceStatus[name] = 'offline';
-        }
-        renderInstanceList();
-      }
-    }
-
-    // Send question
-    async function sendQuestion() {
-      const input = document.getElementById('question-input');
-      const question = input.value.trim();
-
-      if (!question || !selectedInstance) return;
-
-      const targetInstance = selectedInstance;
-      const instance = registry.instances[targetInstance];
-      if (!instance) return;
-
-      // Check if this specific instance is already loading
-      if (loadingInstances[targetInstance]) {
-        showToast(`${targetInstance} is already processing a request`, 'error');
-        return;
-      }
-
-      input.value = '';
-
-      // Add user message to target instance's conversation
-      const prevSelected = selectedInstance;
-      selectedInstance = targetInstance;
-      addMessage('user', question);
-
-      // Show loading for this instance
-      const loadingId = showLoading(targetInstance);
-      loadingInstances[targetInstance] = {
-        loadingId,
-        startTime: Date.now()
-      };
-
-      totalRequests++;
-      updateStats();
-      updateSendButton();
-      renderInstanceList();
-
-      const startTime = Date.now();
-
-      try {
-        const headers = { 'Content-Type': 'application/json' };
-        if (instance.apiKey) {
-          headers['X-API-Key'] = instance.apiKey;
+          selectedInstance = targetInstance;
+          addMessage(
+            "error",
+            `Failed to reach ${targetInstance}: ${e.message}`,
+            null,
+            null,
+            true,
+            question,
+          );
         }
 
-        // Build request body with optional session_id for context continuity
-        const requestBody = { question };
-        const instanceContextMode = contextModes[targetInstance] || false;
-        if (instanceContextMode && sessionIds[targetInstance]) {
-          requestBody.session_id = sessionIds[targetInstance];
-        }
+        hideLoading(loadingId, targetInstance);
+        delete loadingInstances[targetInstance];
 
-        const response = await fetch(`http://${instance.host}:${instance.port}/ask`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(requestBody)
-        });
-
-        const duration = Date.now() - startTime;
-        avgResponseTime = (avgResponseTime * totalResponses + duration) / (totalResponses + 1);
-        totalResponses++;
-        updateStats();
-
-        // Switch back to target instance to add response
-        selectedInstance = targetInstance;
-
-        if (response.ok) {
-          const data = await response.json();
-          // Save session ID for context continuity
-          if (instanceContextMode && data.session_id) {
-            sessionIds[targetInstance] = data.session_id;
-            saveSessionIds();
-          }
-          addMessage('assistant', data.answer, data.instance_name || targetInstance, duration);
+        // Update UI - stay on target instance if that's where we started
+        if (prevSelected === targetInstance) {
+          renderInstanceList();
+          renderConversation();
         } else {
-          const data = await response.json();
-          addMessage('error', data.error || 'Unknown error', null, null, true, question);
+          selectedInstance = prevSelected;
+          renderInstanceList();
         }
-      } catch (e) {
-        selectedInstance = targetInstance;
-        addMessage('error', `Failed to reach ${targetInstance}: ${e.message}`, null, null, true, question);
+        updateSendButton();
       }
 
-      hideLoading(loadingId, targetInstance);
-      delete loadingInstances[targetInstance];
-
-      // Update UI - stay on target instance if that's where we started
-      if (prevSelected === targetInstance) {
-        renderInstanceList();
-        renderConversation();
-      } else {
-        selectedInstance = prevSelected;
-        renderInstanceList();
-      }
-      updateSendButton();
-    }
-
-    // Update send button based on current instance loading state
-    function updateSendButton() {
-      const btn = document.getElementById('send-btn');
-      if (selectedInstance && instanceStatus[selectedInstance] === 'online' && !loadingInstances[selectedInstance]) {
-        btn.disabled = false;
-      } else {
-        btn.disabled = true;
-      }
-    }
-
-    // Retry a failed question
-    function retryQuestion(btn) {
-      const messageDiv = btn.closest('.message');
-      const question = messageDiv.dataset.retryQuestion;
-      if (question) {
-        // Remove the error message from DOM and conversation history
-        const conv = conversations[selectedInstance];
-        if (conv) {
-          // Remove the last two messages (user question and error)
-          conv.splice(-2, 2);
-          saveConversations();
+      // Update send button based on current instance loading state
+      function updateSendButton() {
+        const btn = document.getElementById("send-btn");
+        if (
+          selectedInstance &&
+          instanceStatus[selectedInstance] === "online" &&
+          !loadingInstances[selectedInstance]
+        ) {
+          btn.disabled = false;
+        } else {
+          btn.disabled = true;
         }
-        messageDiv.previousElementSibling?.remove(); // Remove user message
-        messageDiv.remove(); // Remove error message
-
-        // Put the question back in the input and send
-        document.getElementById('question-input').value = question;
-        sendQuestion();
       }
-    }
 
-    // Add message to chat
-    function addMessage(type, content, sender = null, duration = null, save = true, retryQuestion = null, savedTimestamp = null) {
-      const messages = document.getElementById('messages');
+      // Retry a failed question
+      function retryQuestion(btn) {
+        const messageDiv = btn.closest(".message");
+        const question = messageDiv.dataset.retryQuestion;
+        if (question) {
+          // Remove the error message from DOM and conversation history
+          const conv = conversations[selectedInstance];
+          if (conv) {
+            // Remove the last two messages (user question and error)
+            conv.splice(-2, 2);
+            saveConversations();
+          }
+          messageDiv.previousElementSibling?.remove(); // Remove user message
+          messageDiv.remove(); // Remove error message
 
-      // Remove empty state if present
-      const emptyState = messages.querySelector('.empty-state');
-      if (emptyState) emptyState.remove();
+          // Put the question back in the input and send
+          document.getElementById("question-input").value = question;
+          sendQuestion();
+        }
+      }
 
-      // Handle divider type
-      if (type === 'divider') {
-        const enabled = content === 'on';
-        const divider = document.createElement('div');
-        divider.className = 'context-divider';
-        divider.innerHTML = `
+      // Add message to chat
+      function addMessage(
+        type,
+        content,
+        sender = null,
+        duration = null,
+        save = true,
+        retryQuestion = null,
+        savedTimestamp = null,
+      ) {
+        const messages = document.getElementById("messages");
+
+        // Remove empty state if present
+        const emptyState = messages.querySelector(".empty-state");
+        if (emptyState) emptyState.remove();
+
+        // Handle divider type
+        if (type === "divider") {
+          const enabled = content === "on";
+          const divider = document.createElement("div");
+          divider.className = "context-divider";
+          divider.innerHTML = `
           <span class="context-divider-line"></span>
-          <span class="context-divider-text ${enabled ? 'enabled' : 'disabled'}">
-            ${enabled ? 'Context ON - conversation will be remembered' : 'Context OFF - new conversation started'}
+          <span class="context-divider-text ${enabled ? "enabled" : "disabled"}">
+            ${enabled ? "Context ON - conversation will be remembered" : "Context OFF - new conversation started"}
           </span>
           <span class="context-divider-line"></span>
         `;
-        messages.appendChild(divider);
-        messages.scrollTop = messages.scrollHeight;
-        return;
-      }
+          messages.appendChild(divider);
+          messages.scrollTop = messages.scrollHeight;
+          return;
+        }
 
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `message ${type === 'user' ? 'user-message' : type === 'assistant' ? 'assistant-message' : 'error-message'}`;
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${type === "user" ? "user-message" : type === "assistant" ? "assistant-message" : "error-message"}`;
 
-      const timestamp = savedTimestamp || new Date().toISOString();
-      const time = new Date(timestamp).toLocaleTimeString();
-      const durationStr = duration ? ` (${formatDuration(duration)})` : '';
+        const timestamp = savedTimestamp || new Date().toISOString();
+        const time = new Date(timestamp).toLocaleTimeString();
+        const durationStr = duration ? ` (${formatDuration(duration)})` : "";
 
-      if (type === 'user') {
-        const rendered = marked.parse(content);
-        const relativeTime = formatRelativeTime(timestamp);
-        messageDiv.innerHTML = `
+        if (type === "user") {
+          const rendered = marked.parse(content);
+          const relativeTime = formatRelativeTime(timestamp);
+          messageDiv.innerHTML = `
           <div class="message-header">
             <span class="message-sender user">You</span>
             <span class="message-time">${time} - <span class="message-relative-time" data-timestamp="${timestamp}">${relativeTime}</span></span>
           </div>
           <div class="message-content user">${rendered}</div>
         `;
-        // Store raw content for reference
-        messageDiv.querySelector('.message-content').dataset.raw = content;
-      } else if (type === 'assistant') {
-        const rendered = marked.parse(content);
-        const isLong = content.length > 300 || content.split('\n').length > 5;
-        const relativeTime = formatRelativeTime(timestamp);
-        messageDiv.innerHTML = `
+          // Store raw content for reference
+          messageDiv.querySelector(".message-content").dataset.raw = content;
+        } else if (type === "assistant") {
+          const rendered = marked.parse(content);
+          const isLong = content.length > 300 || content.split("\n").length > 5;
+          const relativeTime = formatRelativeTime(timestamp);
+          messageDiv.innerHTML = `
           <div class="message-header">
-            <span class="message-sender assistant">${sender || 'Assistant'}</span>
+            <span class="message-sender assistant">${sender || "Assistant"}</span>
             <span class="message-time">${time}${durationStr} - <span class="message-relative-time" data-timestamp="${timestamp}">${relativeTime}</span></span>
           </div>
           <div class="message-content-wrapper">
-            ${isLong ? `
+            ${
+              isLong
+                ? `
             <button class="collapse-toggle" onclick="toggleCollapse(this)" title="Show less">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </button>
-            ` : ''}
-            <div class="message-content ${isLong ? 'collapsible' : ''}">
+            `
+                : ""
+            }
+            <div class="message-content ${isLong ? "collapsible" : ""}">
               <button class="btn btn-icon copy-btn" onclick="copyToClipboard(this)" title="Copy to clipboard">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -1460,18 +1602,20 @@
             </div>
           </div>
         `;
-        // Store raw content for copying
-        messageDiv.querySelector('.message-content').dataset.raw = content;
-      } else if (type === 'error') {
-        const retryBtn = retryQuestion ? `
+          // Store raw content for copying
+          messageDiv.querySelector(".message-content").dataset.raw = content;
+        } else if (type === "error") {
+          const retryBtn = retryQuestion
+            ? `
           <button class="btn btn-secondary retry-btn" onclick="retryQuestion(this)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
             </svg>
             Retry
           </button>
-        ` : '';
-        messageDiv.innerHTML = `
+        `
+            : "";
+          messageDiv.innerHTML = `
           <div class="message-header">
             <span class="message-sender" style="color: var(--error)">Error</span>
             <span class="message-time">${time}</span>
@@ -1481,494 +1625,507 @@
             ${retryBtn}
           </div>
         `;
-        if (retryQuestion) {
-          messageDiv.dataset.retryQuestion = retryQuestion;
+          if (retryQuestion) {
+            messageDiv.dataset.retryQuestion = retryQuestion;
+          }
+        }
+
+        messages.appendChild(messageDiv);
+        messages.scrollTop = messages.scrollHeight;
+
+        // Highlight code blocks
+        messageDiv.querySelectorAll("pre code").forEach((block) => {
+          hljs.highlightElement(block);
+        });
+
+        // Save to conversation history
+        if (save && selectedInstance) {
+          if (!conversations[selectedInstance]) {
+            conversations[selectedInstance] = [];
+          }
+          const msgData = {
+            type,
+            content,
+            sender,
+            duration,
+            time: timestamp,
+          };
+          // Save retry question for error messages
+          if (type === "error" && retryQuestion) {
+            msgData.retryQuestion = retryQuestion;
+          }
+          conversations[selectedInstance].push(msgData);
+          saveConversations();
         }
       }
 
-      messages.appendChild(messageDiv);
-      messages.scrollTop = messages.scrollHeight;
+      // Render conversation for selected instance
+      function renderConversation() {
+        const messages = document.getElementById("messages");
+        const conv = conversations[selectedInstance] || [];
 
-      // Highlight code blocks
-      messageDiv.querySelectorAll('pre code').forEach(block => {
-        hljs.highlightElement(block);
-      });
-
-      // Save to conversation history
-      if (save && selectedInstance) {
-        if (!conversations[selectedInstance]) {
-          conversations[selectedInstance] = [];
-        }
-        const msgData = {
-          type,
-          content,
-          sender,
-          duration,
-          time: timestamp
-        };
-        // Save retry question for error messages
-        if (type === 'error' && retryQuestion) {
-          msgData.retryQuestion = retryQuestion;
-        }
-        conversations[selectedInstance].push(msgData);
-        saveConversations();
-      }
-    }
-
-    // Render conversation for selected instance
-    function renderConversation() {
-      const messages = document.getElementById('messages');
-      const conv = conversations[selectedInstance] || [];
-
-      if (conv.length === 0) {
-        messages.innerHTML = `
+        if (conv.length === 0) {
+          messages.innerHTML = `
           <div class="empty-state">
             <h3>Welcome to InterClaude</h3>
             <p>Select an instance and ask a question to get started.</p>
           </div>
         `;
-        return;
-      }
-
-      messages.innerHTML = '';
-      for (const msg of conv) {
-        addMessage(msg.type, msg.content, msg.sender, msg.duration, false, msg.retryQuestion || null, msg.time);
-      }
-    }
-
-    // Save conversations to localStorage
-    function saveConversations() {
-      localStorage.setItem('conversations', JSON.stringify(conversations));
-      updateConversationTitle();
-    }
-
-    // Load conversations from localStorage
-    function loadConversations() {
-      const saved = localStorage.getItem('conversations');
-      if (saved) {
-        try {
-          conversations = JSON.parse(saved);
-        } catch (e) {
-          conversations = {};
-        }
-      }
-    }
-
-    // Clear conversation for current instance
-    function clearConversation() {
-      if (selectedInstance) {
-        if (!conversations[selectedInstance] || conversations[selectedInstance].length === 0) {
-          showToast('No conversation to clear', 'error');
           return;
         }
-        if (confirm(`Clear conversation history for ${selectedInstance}?`)) {
-          delete conversations[selectedInstance];
-          delete sessionIds[selectedInstance]; // Clear session ID too
-          saveConversations();
-          saveSessionIds();
-          renderConversation();
-          updateConversationTitle();
-          showToast('Conversation cleared', 'success');
+
+        messages.innerHTML = "";
+        for (const msg of conv) {
+          addMessage(
+            msg.type,
+            msg.content,
+            msg.sender,
+            msg.duration,
+            false,
+            msg.retryQuestion || null,
+            msg.time,
+          );
         }
       }
-    }
 
-    // Handle context toggle click
-    function handleContextToggleClick() {
-      const checkbox = document.getElementById('context-toggle');
-      checkbox.checked = !checkbox.checked;
-      toggleContextMode(checkbox.checked);
-    }
+      // Save conversations to localStorage
+      function saveConversations() {
+        localStorage.setItem("conversations", JSON.stringify(conversations));
+        updateConversationTitle();
+      }
 
-    // Toggle context mode for current instance
-    function toggleContextMode(enabled) {
-      if (!selectedInstance) {
-        showToast('Select an instance first', 'error');
-        document.getElementById('context-toggle').checked = false;
-        return;
+      // Load conversations from localStorage
+      function loadConversations() {
+        const saved = localStorage.getItem("conversations");
+        if (saved) {
+          try {
+            conversations = JSON.parse(saved);
+          } catch (e) {
+            conversations = {};
+          }
+        }
       }
-      contextModes[selectedInstance] = enabled;
-      saveContextModes();
-      if (!enabled) {
-        // Clear session ID when disabling context mode
-        delete sessionIds[selectedInstance];
-        saveSessionIds();
-      }
-      // Add divider to conversation
-      if (conversations[selectedInstance] && conversations[selectedInstance].length > 0) {
-        addContextDivider(enabled);
-      }
-      showToast(enabled ? `Context enabled for ${selectedInstance}` : `Context disabled for ${selectedInstance}`, 'success');
-    }
 
-    // Update context toggle to reflect current instance's setting
-    function updateContextToggle() {
-      const toggle = document.getElementById('context-toggle');
-      if (selectedInstance) {
-        toggle.checked = contextModes[selectedInstance] || false;
-        toggle.disabled = false;
-      } else {
-        toggle.checked = false;
-        toggle.disabled = true;
+      // Clear conversation for current instance
+      function clearConversation() {
+        if (selectedInstance) {
+          if (!conversations[selectedInstance] || conversations[selectedInstance].length === 0) {
+            showToast("No conversation to clear", "error");
+            return;
+          }
+          if (confirm(`Clear conversation history for ${selectedInstance}?`)) {
+            delete conversations[selectedInstance];
+            delete sessionIds[selectedInstance]; // Clear session ID too
+            saveConversations();
+            saveSessionIds();
+            renderConversation();
+            updateConversationTitle();
+            showToast("Conversation cleared", "success");
+          }
+        }
       }
-    }
 
-    // Add context mode divider to conversation
-    function addContextDivider(enabled) {
-      const messages = document.getElementById('messages');
-      const divider = document.createElement('div');
-      divider.className = 'context-divider';
-      divider.innerHTML = `
+      // Handle context toggle click
+      function handleContextToggleClick() {
+        const checkbox = document.getElementById("context-toggle");
+        checkbox.checked = !checkbox.checked;
+        toggleContextMode(checkbox.checked);
+      }
+
+      // Toggle context mode for current instance
+      function toggleContextMode(enabled) {
+        if (!selectedInstance) {
+          showToast("Select an instance first", "error");
+          document.getElementById("context-toggle").checked = false;
+          return;
+        }
+        contextModes[selectedInstance] = enabled;
+        saveContextModes();
+        if (!enabled) {
+          // Clear session ID when disabling context mode
+          delete sessionIds[selectedInstance];
+          saveSessionIds();
+        }
+        // Add divider to conversation
+        if (conversations[selectedInstance] && conversations[selectedInstance].length > 0) {
+          addContextDivider(enabled);
+        }
+        showToast(
+          enabled
+            ? `Context enabled for ${selectedInstance}`
+            : `Context disabled for ${selectedInstance}`,
+          "success",
+        );
+      }
+
+      // Update context toggle to reflect current instance's setting
+      function updateContextToggle() {
+        const toggle = document.getElementById("context-toggle");
+        if (selectedInstance) {
+          toggle.checked = contextModes[selectedInstance] || false;
+          toggle.disabled = false;
+        } else {
+          toggle.checked = false;
+          toggle.disabled = true;
+        }
+      }
+
+      // Add context mode divider to conversation
+      function addContextDivider(enabled) {
+        const messages = document.getElementById("messages");
+        const divider = document.createElement("div");
+        divider.className = "context-divider";
+        divider.innerHTML = `
         <span class="context-divider-line"></span>
-        <span class="context-divider-text ${enabled ? 'enabled' : 'disabled'}">
-          ${enabled ? 'Context ON - conversation will be remembered' : 'Context OFF - new conversation started'}
+        <span class="context-divider-text ${enabled ? "enabled" : "disabled"}">
+          ${enabled ? "Context ON - conversation will be remembered" : "Context OFF - new conversation started"}
         </span>
         <span class="context-divider-line"></span>
       `;
-      messages.appendChild(divider);
-      messages.scrollTop = messages.scrollHeight;
+        messages.appendChild(divider);
+        messages.scrollTop = messages.scrollHeight;
 
-      // Save divider to conversation history
-      if (selectedInstance) {
-        if (!conversations[selectedInstance]) {
-          conversations[selectedInstance] = [];
+        // Save divider to conversation history
+        if (selectedInstance) {
+          if (!conversations[selectedInstance]) {
+            conversations[selectedInstance] = [];
+          }
+          conversations[selectedInstance].push({
+            type: "divider",
+            content: enabled ? "on" : "off",
+            time: new Date().toISOString(),
+          });
+          saveConversations();
         }
-        conversations[selectedInstance].push({
-          type: 'divider',
-          content: enabled ? 'on' : 'off',
-          time: new Date().toISOString()
+      }
+
+      // Save context modes to localStorage
+      function saveContextModes() {
+        localStorage.setItem("contextModes", JSON.stringify(contextModes));
+      }
+
+      // Load context modes from localStorage
+      function loadContextModes() {
+        const saved = localStorage.getItem("contextModes");
+        if (saved) {
+          try {
+            contextModes = JSON.parse(saved);
+          } catch (e) {
+            contextModes = {};
+          }
+        }
+        // Migrate from old global contextMode if it exists
+        const oldGlobal = localStorage.getItem("contextMode");
+        if (oldGlobal !== null) {
+          // Remove old setting after migration
+          localStorage.removeItem("contextMode");
+        }
+      }
+
+      // Save session IDs to localStorage
+      function saveSessionIds() {
+        localStorage.setItem("sessionIds", JSON.stringify(sessionIds));
+      }
+
+      // Load session IDs from localStorage
+      function loadSessionIds() {
+        const saved = localStorage.getItem("sessionIds");
+        if (saved) {
+          try {
+            sessionIds = JSON.parse(saved);
+          } catch (e) {
+            sessionIds = {};
+          }
+        }
+      }
+
+      // Toggle message collapse
+      function toggleCollapse(btn) {
+        const wrapper = btn.parentElement;
+        const content = wrapper.querySelector(".message-content");
+        const isCollapsed = content.classList.toggle("collapsed");
+        btn.classList.toggle("collapsed", isCollapsed);
+        btn.title = isCollapsed ? "Show more" : "Show less";
+      }
+
+      // Collapse all messages
+      function collapseAll() {
+        document.querySelectorAll(".message-content.collapsible").forEach((content) => {
+          content.classList.add("collapsed");
+          const wrapper = content.parentElement;
+          const btn = wrapper.querySelector(".collapse-toggle");
+          if (btn) {
+            btn.classList.add("collapsed");
+            btn.title = "Show more";
+          }
         });
-        saveConversations();
       }
-    }
 
-    // Save context modes to localStorage
-    function saveContextModes() {
-      localStorage.setItem('contextModes', JSON.stringify(contextModes));
-    }
-
-    // Load context modes from localStorage
-    function loadContextModes() {
-      const saved = localStorage.getItem('contextModes');
-      if (saved) {
-        try {
-          contextModes = JSON.parse(saved);
-        } catch (e) {
-          contextModes = {};
-        }
+      // Expand all messages
+      function expandAll() {
+        document.querySelectorAll(".message-content.collapsible").forEach((content) => {
+          content.classList.remove("collapsed");
+          const wrapper = content.parentElement;
+          const btn = wrapper.querySelector(".collapse-toggle");
+          if (btn) {
+            btn.classList.remove("collapsed");
+            btn.title = "Show less";
+          }
+        });
       }
-      // Migrate from old global contextMode if it exists
-      const oldGlobal = localStorage.getItem('contextMode');
-      if (oldGlobal !== null) {
-        // Remove old setting after migration
-        localStorage.removeItem('contextMode');
-      }
-    }
 
-    // Save session IDs to localStorage
-    function saveSessionIds() {
-      localStorage.setItem('sessionIds', JSON.stringify(sessionIds));
-    }
+      // Show loading indicator
+      function showLoading(instanceName) {
+        const messages = document.getElementById("messages");
+        const loadingDiv = document.createElement("div");
+        const loadingId = `loading-${instanceName}-${Date.now()}`;
+        loadingDiv.className = "loading";
+        loadingDiv.id = loadingId;
+        loadingDiv.dataset.instance = instanceName;
 
-    // Load session IDs from localStorage
-    function loadSessionIds() {
-      const saved = localStorage.getItem('sessionIds');
-      if (saved) {
-        try {
-          sessionIds = JSON.parse(saved);
-        } catch (e) {
-          sessionIds = {};
-        }
-      }
-    }
-
-    // Toggle message collapse
-    function toggleCollapse(btn) {
-      const wrapper = btn.parentElement;
-      const content = wrapper.querySelector('.message-content');
-      const isCollapsed = content.classList.toggle('collapsed');
-      btn.classList.toggle('collapsed', isCollapsed);
-      btn.title = isCollapsed ? 'Show more' : 'Show less';
-    }
-
-    // Collapse all messages
-    function collapseAll() {
-      document.querySelectorAll('.message-content.collapsible').forEach(content => {
-        content.classList.add('collapsed');
-        const wrapper = content.parentElement;
-        const btn = wrapper.querySelector('.collapse-toggle');
-        if (btn) {
-          btn.classList.add('collapsed');
-          btn.title = 'Show more';
-        }
-      });
-    }
-
-    // Expand all messages
-    function expandAll() {
-      document.querySelectorAll('.message-content.collapsible').forEach(content => {
-        content.classList.remove('collapsed');
-        const wrapper = content.parentElement;
-        const btn = wrapper.querySelector('.collapse-toggle');
-        if (btn) {
-          btn.classList.remove('collapsed');
-          btn.title = 'Show less';
-        }
-      });
-    }
-
-    // Show loading indicator
-    function showLoading(instanceName) {
-      const messages = document.getElementById('messages');
-      const loadingDiv = document.createElement('div');
-      const loadingId = `loading-${instanceName}-${Date.now()}`;
-      loadingDiv.className = 'loading';
-      loadingDiv.id = loadingId;
-      loadingDiv.dataset.instance = instanceName;
-
-      const startTime = Date.now();
-      loadingDiv.innerHTML = `
+        const startTime = Date.now();
+        loadingDiv.innerHTML = `
         <div class="spinner"></div>
         <span>Waiting for ${instanceName}...</span>
         <span class="timer">0s</span>
       `;
 
-      messages.appendChild(loadingDiv);
-      messages.scrollTop = messages.scrollHeight;
+        messages.appendChild(loadingDiv);
+        messages.scrollTop = messages.scrollHeight;
 
-      const timer = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        const timerEl = loadingDiv.querySelector('.timer');
-        if (timerEl) timerEl.textContent = `${elapsed}s`;
-      }, 1000);
+        const timer = setInterval(() => {
+          const elapsed = Math.floor((Date.now() - startTime) / 1000);
+          const timerEl = loadingDiv.querySelector(".timer");
+          if (timerEl) timerEl.textContent = `${elapsed}s`;
+        }, 1000);
 
-      // Store timer reference in the loading state
-      if (loadingInstances[instanceName]) {
-        loadingInstances[instanceName].timer = timer;
+        // Store timer reference in the loading state
+        if (loadingInstances[instanceName]) {
+          loadingInstances[instanceName].timer = timer;
+        }
+
+        return loadingId;
       }
 
-      return loadingId;
-    }
-
-    // Hide loading indicator
-    function hideLoading(id, instanceName) {
-      if (loadingInstances[instanceName] && loadingInstances[instanceName].timer) {
-        clearInterval(loadingInstances[instanceName].timer);
+      // Hide loading indicator
+      function hideLoading(id, instanceName) {
+        if (loadingInstances[instanceName] && loadingInstances[instanceName].timer) {
+          clearInterval(loadingInstances[instanceName].timer);
+        }
+        const loading = document.getElementById(id);
+        if (loading) loading.remove();
       }
-      const loading = document.getElementById(id);
-      if (loading) loading.remove();
-    }
 
-    // Format duration to human readable
-    function formatDuration(ms) {
-      if (ms < 1000) return `${Math.round(ms)}ms`;
-      if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-      if (ms < 3600000) {
-        const mins = Math.floor(ms / 60000);
-        const secs = Math.round((ms % 60000) / 1000);
-        return `${mins}m ${secs}s`;
+      // Format duration to human readable
+      function formatDuration(ms) {
+        if (ms < 1000) return `${Math.round(ms)}ms`;
+        if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+        if (ms < 3600000) {
+          const mins = Math.floor(ms / 60000);
+          const secs = Math.round((ms % 60000) / 1000);
+          return `${mins}m ${secs}s`;
+        }
+        const hours = Math.floor(ms / 3600000);
+        const mins = Math.round((ms % 3600000) / 60000);
+        return `${hours}h ${mins}m`;
       }
-      const hours = Math.floor(ms / 3600000);
-      const mins = Math.round((ms % 3600000) / 60000);
-      return `${hours}h ${mins}m`;
-    }
 
-    // Format relative time (e.g., "5 minutes ago")
-    function formatRelativeTime(isoTimestamp) {
-      const now = Date.now();
-      const then = new Date(isoTimestamp).getTime();
-      const diff = now - then;
+      // Format relative time (e.g., "5 minutes ago")
+      function formatRelativeTime(isoTimestamp) {
+        const now = Date.now();
+        const then = new Date(isoTimestamp).getTime();
+        const diff = now - then;
 
-      if (diff < 60000) return 'just now';
-      if (diff < 3600000) {
-        const mins = Math.floor(diff / 60000);
-        return `${mins} minute${mins !== 1 ? 's' : ''} ago`;
+        if (diff < 60000) return "just now";
+        if (diff < 3600000) {
+          const mins = Math.floor(diff / 60000);
+          return `${mins} minute${mins !== 1 ? "s" : ""} ago`;
+        }
+        if (diff < 86400000) {
+          const hours = Math.floor(diff / 3600000);
+          return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
+        }
+        const days = Math.floor(diff / 86400000);
+        return `${days} day${days !== 1 ? "s" : ""} ago`;
       }
-      if (diff < 86400000) {
-        const hours = Math.floor(diff / 3600000);
-        return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-      }
-      const days = Math.floor(diff / 86400000);
-      return `${days} day${days !== 1 ? 's' : ''} ago`;
-    }
 
-    // Update all relative times in messages
-    function updateRelativeTimes() {
-      document.querySelectorAll('.message-relative-time').forEach(el => {
-        const timestamp = el.dataset.timestamp;
-        if (timestamp) {
-          el.textContent = formatRelativeTime(timestamp);
+      // Update all relative times in messages
+      function updateRelativeTimes() {
+        document.querySelectorAll(".message-relative-time").forEach((el) => {
+          const timestamp = el.dataset.timestamp;
+          if (timestamp) {
+            el.textContent = formatRelativeTime(timestamp);
+          }
+        });
+      }
+
+      // Update relative times every minute
+      setInterval(updateRelativeTimes, 60000);
+
+      // Update stats
+      function updateStats() {
+        document.getElementById("stat-requests").textContent = totalRequests;
+        document.getElementById("stat-avg-time").textContent = formatDuration(avgResponseTime);
+      }
+
+      // Copy to clipboard
+      async function copyToClipboard(btn) {
+        const content = btn.parentElement.dataset.raw;
+        try {
+          await navigator.clipboard.writeText(content);
+          showToast("Copied to clipboard", "success");
+        } catch (e) {
+          showToast("Failed to copy", "error");
+        }
+      }
+
+      // Show toast notification
+      function showToast(message, type = "success") {
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+      }
+
+      // Escape HTML
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Handle textarea keyboard shortcuts
+      document.getElementById("question-input").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendQuestion();
+        }
+        // Shift+Enter allows default behavior (new line)
+      });
+
+      // Resize handle for input area
+      const resizeHandle = document.getElementById("resize-handle");
+      const inputArea = document.getElementById("input-area");
+      let isResizing = false;
+      let startY = 0;
+      let startHeight = 0;
+
+      resizeHandle.addEventListener("mousedown", (e) => {
+        isResizing = true;
+        startY = e.clientY;
+        startHeight = inputArea.offsetHeight;
+        resizeHandle.classList.add("dragging");
+        document.body.style.cursor = "ns-resize";
+        document.body.style.userSelect = "none";
+        e.preventDefault();
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!isResizing) return;
+
+        const deltaY = startY - e.clientY;
+        const newHeight = Math.max(100, Math.min(600, startHeight + deltaY));
+        inputArea.style.height = newHeight + "px";
+      });
+
+      document.addEventListener("mouseup", () => {
+        if (isResizing) {
+          isResizing = false;
+          resizeHandle.classList.remove("dragging");
+          document.body.style.cursor = "";
+          document.body.style.userSelect = "";
+          // Save height preference
+          localStorage.setItem("inputAreaHeight", inputArea.style.height);
+          updateMessagesPadding();
         }
       });
-    }
 
-    // Update relative times every minute
-    setInterval(updateRelativeTimes, 60000);
-
-    // Update stats
-    function updateStats() {
-      document.getElementById('stat-requests').textContent = totalRequests;
-      document.getElementById('stat-avg-time').textContent = formatDuration(avgResponseTime);
-    }
-
-    // Copy to clipboard
-    async function copyToClipboard(btn) {
-      const content = btn.parentElement.dataset.raw;
-      try {
-        await navigator.clipboard.writeText(content);
-        showToast('Copied to clipboard', 'success');
-      } catch (e) {
-        showToast('Failed to copy', 'error');
-      }
-    }
-
-    // Show toast notification
-    function showToast(message, type = 'success') {
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.textContent = message;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
-    // Escape HTML
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    // Handle textarea keyboard shortcuts
-    document.getElementById('question-input').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendQuestion();
-      }
-      // Shift+Enter allows default behavior (new line)
-    });
-
-    // Resize handle for input area
-    const resizeHandle = document.getElementById('resize-handle');
-    const inputArea = document.getElementById('input-area');
-    let isResizing = false;
-    let startY = 0;
-    let startHeight = 0;
-
-    resizeHandle.addEventListener('mousedown', (e) => {
-      isResizing = true;
-      startY = e.clientY;
-      startHeight = inputArea.offsetHeight;
-      resizeHandle.classList.add('dragging');
-      document.body.style.cursor = 'ns-resize';
-      document.body.style.userSelect = 'none';
-      e.preventDefault();
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!isResizing) return;
-
-      const deltaY = startY - e.clientY;
-      const newHeight = Math.max(100, Math.min(600, startHeight + deltaY));
-      inputArea.style.height = newHeight + 'px';
-    });
-
-    document.addEventListener('mouseup', () => {
-      if (isResizing) {
-        isResizing = false;
-        resizeHandle.classList.remove('dragging');
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-        // Save height preference
-        localStorage.setItem('inputAreaHeight', inputArea.style.height);
-        updateMessagesPadding();
-      }
-    });
-
-    // Update messages padding based on input area height
-    function updateMessagesPadding() {
-      const inputArea = document.getElementById('input-area');
-      const messages = document.getElementById('messages');
-      if (inputArea && messages) {
-        messages.style.paddingBottom = (inputArea.offsetHeight + 20) + 'px';
-      }
-    }
-
-    // Load saved input area height
-    const savedHeight = localStorage.getItem('inputAreaHeight');
-    if (savedHeight) {
-      inputArea.style.height = savedHeight;
-    }
-    // Initial padding update after a short delay to let DOM settle
-    setTimeout(updateMessagesPadding, 100);
-
-    // Theme toggle
-    function toggleTheme() {
-      const isLight = document.documentElement.classList.toggle('light');
-
-      // Update toggle button state
-      document.getElementById('theme-light').classList.toggle('active', isLight);
-      document.getElementById('theme-dark').classList.toggle('active', !isLight);
-
-      // Switch highlight.js stylesheets
-      document.getElementById('hljs-dark').disabled = isLight;
-      document.getElementById('hljs-light').disabled = !isLight;
-
-      // Persist preference
-      localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    }
-
-    // Load saved theme preference
-    function loadTheme() {
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme === 'light') {
-        document.documentElement.classList.add('light');
-        document.getElementById('theme-light').classList.add('active');
-        document.getElementById('theme-dark').classList.remove('active');
-        document.getElementById('hljs-dark').disabled = true;
-        document.getElementById('hljs-light').disabled = false;
-      }
-    }
-
-    // Toggle sidebar
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const isCollapsed = sidebar.classList.toggle('collapsed');
-      localStorage.setItem('sidebarCollapsed', isCollapsed);
-    }
-
-    // Load saved sidebar state
-    function loadSidebarState() {
-      const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-      if (isCollapsed) {
-        document.getElementById('sidebar').classList.add('collapsed');
-      }
-    }
-
-    // Load version
-    async function loadVersion() {
-      try {
-        const response = await fetch('/api/version');
-        const data = await response.json();
-        if (data.version) {
-          document.getElementById('app-version').textContent = `v${data.version}`;
-        } else {
-          document.getElementById('app-version').style.display = 'none';
+      // Update messages padding based on input area height
+      function updateMessagesPadding() {
+        const inputArea = document.getElementById("input-area");
+        const messages = document.getElementById("messages");
+        if (inputArea && messages) {
+          messages.style.paddingBottom = inputArea.offsetHeight + 20 + "px";
         }
-      } catch (e) {
-        // Version not available - hide the badge
-        document.getElementById('app-version').style.display = 'none';
       }
-    }
 
-    // Initialize
-    loadTheme();
-    loadSidebarState();
-    loadConversations();
-    loadSessionIds();
-    loadContextModes();
-    loadVersion();
-    loadRegistry();
-    updateContextToggle();
-  </script>
-</body>
+      // Load saved input area height
+      const savedHeight = localStorage.getItem("inputAreaHeight");
+      if (savedHeight) {
+        inputArea.style.height = savedHeight;
+      }
+      // Initial padding update after a short delay to let DOM settle
+      setTimeout(updateMessagesPadding, 100);
+
+      // Theme toggle
+      function toggleTheme() {
+        const isLight = document.documentElement.classList.toggle("light");
+
+        // Update toggle button state
+        document.getElementById("theme-light").classList.toggle("active", isLight);
+        document.getElementById("theme-dark").classList.toggle("active", !isLight);
+
+        // Switch highlight.js stylesheets
+        document.getElementById("hljs-dark").disabled = isLight;
+        document.getElementById("hljs-light").disabled = !isLight;
+
+        // Persist preference
+        localStorage.setItem("theme", isLight ? "light" : "dark");
+      }
+
+      // Load saved theme preference
+      function loadTheme() {
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme === "light") {
+          document.documentElement.classList.add("light");
+          document.getElementById("theme-light").classList.add("active");
+          document.getElementById("theme-dark").classList.remove("active");
+          document.getElementById("hljs-dark").disabled = true;
+          document.getElementById("hljs-light").disabled = false;
+        }
+      }
+
+      // Toggle sidebar
+      function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        const isCollapsed = sidebar.classList.toggle("collapsed");
+        localStorage.setItem("sidebarCollapsed", isCollapsed);
+      }
+
+      // Load saved sidebar state
+      function loadSidebarState() {
+        const isCollapsed = localStorage.getItem("sidebarCollapsed") === "true";
+        if (isCollapsed) {
+          document.getElementById("sidebar").classList.add("collapsed");
+        }
+      }
+
+      // Load version
+      async function loadVersion() {
+        try {
+          const response = await fetch("/api/version");
+          const data = await response.json();
+          if (data.version) {
+            document.getElementById("app-version").textContent = `v${data.version}`;
+          } else {
+            document.getElementById("app-version").style.display = "none";
+          }
+        } catch (e) {
+          // Version not available - hide the badge
+          document.getElementById("app-version").style.display = "none";
+        }
+      }
+
+      // Initialize
+      loadTheme();
+      loadSidebarState();
+      loadConversations();
+      loadSessionIds();
+      loadContextModes();
+      loadVersion();
+      loadRegistry();
+      updateContextToggle();
+    </script>
+  </body>
 </html>

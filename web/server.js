@@ -15,9 +15,7 @@ const REGISTRY_PATH = join(homedir(), ".claude", "interclaude-registry.json");
 // Get version from package.json
 let version = "0.0.0";
 try {
-  const packageJson = JSON.parse(
-    readFileSync(join(__dirname, "..", "package.json"), "utf8"),
-  );
+  const packageJson = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8"));
   version = packageJson.version;
 } catch (err) {
   // Use default version

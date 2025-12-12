@@ -183,7 +183,7 @@ function showLoading(message = "Loading...", timeout = null) {
     }
     loadingBox.setContent(
       `{center}{yellow-fg}${spinnerFrames[spinnerIndex]} ${message}{/yellow-fg}\n` +
-      `{center}{cyan-fg}${timeStr}{/cyan-fg}{/center}`
+        `{center}{cyan-fg}${timeStr}{/cyan-fg}{/center}`,
     );
   };
 
@@ -225,7 +225,9 @@ function startListSpinner() {
     listSpinnerIndex = (listSpinnerIndex + 1) % listSpinnerFrames.length;
     // Only update if there are unknown statuses and not navigating
     const hasUnknown = Object.keys(registry.instances).some(
-      (name) => !instanceStatus[name] || (instanceStatus[name] !== "online" && instanceStatus[name] !== "offline")
+      (name) =>
+        !instanceStatus[name] ||
+        (instanceStatus[name] !== "online" && instanceStatus[name] !== "offline"),
     );
     if (hasUnknown) {
       updateInstanceListItems();
@@ -279,7 +281,9 @@ function refreshInstanceList() {
 
   // Check if any instances have unknown status
   const hasUnknown = Object.keys(registry.instances).some(
-    (name) => !instanceStatus[name] || (instanceStatus[name] !== "online" && instanceStatus[name] !== "offline")
+    (name) =>
+      !instanceStatus[name] ||
+      (instanceStatus[name] !== "online" && instanceStatus[name] !== "offline"),
   );
 
   if (hasUnknown) {
@@ -331,8 +335,8 @@ let avgResponseTime = 0;
 function updateStats() {
   statsBox.setContent(
     `{cyan-fg}Requests:{/cyan-fg} ${totalRequests}\n` +
-    `{green-fg}Responses:{/green-fg} ${totalResponses}\n` +
-    `{yellow-fg}Avg Time:{/yellow-fg} ${avgResponseTime.toFixed(0)}ms`
+      `{green-fg}Responses:{/green-fg} ${totalResponses}\n` +
+      `{yellow-fg}Avg Time:{/yellow-fg} ${avgResponseTime.toFixed(0)}ms`,
   );
   screen.render();
 }
@@ -409,7 +413,7 @@ async function askInstance(name, question) {
     });
 
     const duration = Date.now() - startTime;
-    avgResponseTime = (avgResponseTime * (totalResponses) + duration) / (totalResponses + 1);
+    avgResponseTime = (avgResponseTime * totalResponses + duration) / (totalResponses + 1);
 
     if (response.ok) {
       const data = await response.json();
@@ -562,7 +566,9 @@ updateStats();
 activityLine.setData(["Requests"], [activityData]);
 
 messageLog.log("{bold}{cyan-fg}Welcome to InterClaude TUI!{/cyan-fg}{/bold}");
-messageLog.log("Press {yellow-fg}d{/yellow-fg} to discover instances, {yellow-fg}i{/yellow-fg} to ask a question, {yellow-fg}?{/yellow-fg} for help");
+messageLog.log(
+  "Press {yellow-fg}d{/yellow-fg} to discover instances, {yellow-fg}i{/yellow-fg} to ask a question, {yellow-fg}?{/yellow-fg} for help",
+);
 messageLog.log("");
 
 // Focus instance list

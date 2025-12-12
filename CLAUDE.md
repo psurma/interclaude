@@ -76,6 +76,7 @@ Example: "How do announcements work?" will load `packages/announcements/CLAUDE.m
 ### Instance Registry
 
 Instances are registered in `~/.claude/interclaude-registry.json`:
+
 ```json
 {
   "instances": {
@@ -87,6 +88,7 @@ Instances are registered in `~/.claude/interclaude-registry.json`:
 ## Configuration
 
 Key environment variables in `.env`:
+
 - `INSTANCE_NAME` - Identity for mesh discovery
 - `CLAUDE_SYSTEM_PROMPT` - Persona/expertise for this instance
 - `CLAUDE_MODEL` - Model selection (opus, sonnet, haiku)
@@ -103,6 +105,7 @@ curl -s -X POST "http://HOST:PORT/ask" \
 ```
 
 Check instance identity:
+
 ```bash
 curl -s "http://HOST:PORT/health" | jq '{name: .instance_name, persona: .persona}'
 ```
