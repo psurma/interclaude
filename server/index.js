@@ -56,6 +56,9 @@ const MEMORY_MAX_CONTEXT_TOKENS = parseInt(process.env.MEMORY_MAX_CONTEXT_TOKENS
 // Package context configuration
 const PACKAGE_CONTEXT_ENABLED = process.env.PACKAGE_CONTEXT_ENABLED !== "false"; // Enabled by default
 
+// Working directory
+const WORKING_DIR = process.env.CLAUDE_WORKING_DIR || '/tmp';
+
 // Instance name for logging
 const INSTANCE_NAME = process.env.INSTANCE_NAME || "unnamed-instance";
 
@@ -521,6 +524,7 @@ async function startServer() {
       }
     }
 
+    logger.info(`Working directory: ${WORKING_DIR}`);
     logger.info(`Health: GET /health | Ask: POST /ask`);
     if (MEMORY_ENABLED) {
       logger.info(`Memory: GET /memory/stats | /memory/search?q= | /memory/recent`);
