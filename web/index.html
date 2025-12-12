@@ -1179,6 +1179,20 @@
           <span>${info.instance_name}</span>
         </div>
         ` : ''}
+        ${typeof info.memory_enabled !== 'undefined' ? `
+        <div class="detail-row">
+          <span class="detail-label">Memory</span>
+          <span style="color: var(--${info.memory_enabled ? 'success' : 'text-secondary'})">${info.memory_enabled ? 'Enabled' : 'Disabled'}</span>
+        </div>
+        ` : ''}
+        ${typeof info.package_context_enabled !== 'undefined' ? `
+        <div class="detail-row">
+          <span class="detail-label">Packages</span>
+          <span style="color: var(--${info.package_context_enabled && info.packages_discovered > 0 ? 'success' : 'text-secondary'})">
+            ${info.package_context_enabled ? `${info.packages_discovered || 0} discovered (${info.packages_with_docs || 0} with docs)` : 'Disabled'}
+          </span>
+        </div>
+        ` : ''}
         ${info.persona ? `
         <div class="persona">
           <div class="persona-label">System Prompt</div>
@@ -1321,7 +1335,7 @@
           addMessage('assistant', data.answer, data.instance_name || targetInstance, duration);
         } else {
           const data = await response.json();
-          addMessage('error', data.error || 'Unknown error');
+          addMessage('error', data.error || 'Unknown error', null, null, true, question);
         }
       } catch (e) {
         selectedInstance = targetInstance;
